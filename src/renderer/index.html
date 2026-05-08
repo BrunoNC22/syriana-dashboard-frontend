@@ -1,16 +1,22 @@
 <!doctype html>
-<html>
+<html class="dark" lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <title>Electron</title>
+    <title>Syriana dashboard</title>
     <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
-    <meta
+    <!-- <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:"
-    />
+    /> -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&amp;family=Space+Grotesk:wght@500;600&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
   </head>
 
-  <body>
+  <body class="bg-background mashrabiya-overlay">
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
