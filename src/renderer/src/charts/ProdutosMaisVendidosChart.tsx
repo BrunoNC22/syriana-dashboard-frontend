@@ -1,3 +1,4 @@
+import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Bar } from 'react-chartjs-2'
 
@@ -13,12 +14,15 @@ type ChartDataType = {
 
 export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
   const [chartData, setChartData] = useState<ChartDataType[]>()
+  const { month, year } = useApplicationDate()
 
   const getChartData = useCallback(async (): Promise<ChartDataType[]> => {
-    const result = await fetch('http://localhost:8080/dashboard/produtos-mais-vendidos')
+    const result = await fetch(
+      `${import.meta.env.VITE_API_HOST}/dashboard/produtos-mais-vendidos?ano=${year}&mes=${month}`
+    )
     const remoteData: RemoteProdutoVendidoType[] = await result.json()
     return remoteData.map((value) => ({ x: value.nomeProduto, y: value.totalVendido }))
-  }, [])
+  }, [month, year])
 
   const data = useMemo(
     () => ({
@@ -47,6 +51,18 @@ export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
     >
       <Bar
         options={{
+          interaction: {
+            mode: 'point'
+          },
+          onHover: (event, chartElement) => {
+            const target = event.native?.target as HTMLCanvasElement
+            if (!target) return
+            target.style.cursor = chartElement.length ? 'pointer' : 'default'
+          },
+          onClick: (_, activeElements) => {
+            if (!activeElements.length || !chartData) return
+            console.log(chartData[activeElements[0].index].x)
+          },
           scales: {
             x: {
               ticks: {
@@ -63,7 +79,7 @@ export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
             },
             y: {
               ticks: {
-                stepSize: 2500
+                stepSize: 50
               }
             }
           }

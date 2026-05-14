@@ -1,9 +1,12 @@
 import { DashboardContent } from './components/DashboardContent'
+import { ApplicationDateProvider } from './contexts/ApplicationDateProvider'
 
 function App(): React.JSX.Element {
   return (
     <>
-      <DashboardContent />
+      <ApplicationDateProvider>
+        <DashboardContent />
+      </ApplicationDateProvider>
     </>
   )
 }

@@ -1,4 +1,4 @@
-export type ChartDataType = {
-  x: Date
-  y: number
+export type ChartDataType<X, Y> = {
+  x: X
+  y: Y
 }

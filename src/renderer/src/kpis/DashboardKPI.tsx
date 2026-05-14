@@ -21,10 +21,10 @@ export const DashboardKPI = ({
         <span className="material-symbols-outlined text-primary opacity-50">{mainIcon}</span>
       </div>
       <div className="font-data-display text-data-display text-primary font-bold">{text}</div>
-      <div className="mt-4 flex items-center gap-2 text-sm text-green-400">
+      {/* <div className="mt-4 flex items-center gap-2 text-sm text-green-400">
         <span className="material-symbols-outlined text-xs">{infoIcon}</span>
         <span>{info}</span>
-      </div>
+      </div> */}
     </div>
   )
 }

@@ -1,3 +1,4 @@
+import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Bar } from 'react-chartjs-2'
 
@@ -13,12 +14,15 @@ type ChartDataType = {
 
 export const ProdutosQueMaisFaturaramChart = (): React.JSX.Element => {
   const [chartData, setChartData] = useState<ChartDataType[]>()
+  const { month, year } = useApplicationDate()
 
   const getChartData = useCallback(async (): Promise<ChartDataType[]> => {
-    const result = await fetch('http://localhost:8080/dashboard/faturamento-por-produto')
+    const result = await fetch(
+      `${import.meta.env.VITE_API_HOST}/dashboard/faturamento-por-produto?ano=${year}&mes=${month}`
+    )
     const remoteData: ProdutoFaturamentoType[] = await result.json()
     return remoteData.map((value) => ({ x: value.nome, y: value.faturamento }))
-  }, [])
+  }, [year, month])
 
   const data = useMemo(
     () => ({
@@ -75,7 +79,7 @@ export const ProdutosQueMaisFaturaramChart = (): React.JSX.Element => {
             },
             y: {
               ticks: {
-                stepSize: 40000,
+                stepSize: 2000,
                 callback: (value) => formatter.format(value as number)
               }
             }
