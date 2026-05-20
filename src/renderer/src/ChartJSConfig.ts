@@ -56,6 +56,15 @@ ChartJS.defaults.scales.linear.beginAtZero = true
 ChartJS.defaults.scales.linear.ticks.stepSize = 1
 ChartJS.defaults.plugins.legend.position = 'top'
 ChartJS.defaults.plugins.legend.display = false
+
+ChartJS.defaults.plugins.tooltip.backgroundColor = '#1A1A1AAA'
+ChartJS.defaults.plugins.tooltip.titleColor = '#F5F5F5'
+ChartJS.defaults.plugins.tooltip.bodyColor = '#BFBFBF'
+ChartJS.defaults.plugins.tooltip.borderColor = '#2E2E2E'
+ChartJS.defaults.plugins.tooltip.borderWidth = 1
+ChartJS.defaults.plugins.tooltip.padding = 12
+ChartJS.defaults.plugins.tooltip.cornerRadius = 12
+
 ChartJS.defaults.font.family = "'Inter', 'Segoe UI', 'Roboto', sans-serif"
 ChartJS.defaults.font.size = 12
 ChartJS.defaults.font.weight = 'normal'
