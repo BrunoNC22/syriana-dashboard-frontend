@@ -8,6 +8,7 @@ import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { TotalVendidoKPI } from '@renderer/kpis/TotalVendidoKPI'
 import { QuantidadeDePedidosKPI } from '@renderer/kpis/QuantidadeDePedidosKPI'
 import { FaturamentoMedioPorHoraPorDiaSemanaWidget } from '@renderer/widgets/FaturamentoMedioPorHoraPorDiaSemanaWidget'
+import { InsumosQueMaisCustaramChart } from '@renderer/charts/InsumosQueMaisCustaramChart'
 
 export const DashboardContent = (): JSX.Element => {
   const { month, setMonth, setYear, year } = useApplicationDate()
@@ -46,6 +47,12 @@ export const DashboardContent = (): JSX.Element => {
         <DashboardChart
           title="Top 10 produtos que mais faturaram"
           ChartElement={ProdutosQueMaisFaturaramChart}
+          className="lg:col-span-6"
+        />
+
+        <DashboardChart
+          title="Insumos que mais custaram"
+          ChartElement={InsumosQueMaisCustaramChart}
           className="lg:col-span-6"
         />
       </div>
