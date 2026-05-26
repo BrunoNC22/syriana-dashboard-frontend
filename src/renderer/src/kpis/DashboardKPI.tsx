@@ -6,13 +6,7 @@ type DashboardKPIProps = {
   infoIcon: string
 }
 
-export const DashboardKPI = ({
-  title,
-  text,
-  mainIcon,
-  info,
-  infoIcon
-}: DashboardKPIProps): React.JSX.Element => {
+export const DashboardKPI = ({ title, text, mainIcon }: DashboardKPIProps): React.JSX.Element => {
   return (
     <div className="bg-surface-container p-card-padding rounded-xl border border-outline-variant shadow-md relative overflow-hidden group">
       <div className="absolute top-0 left-0 w-1 h-full bg-primary"></div>
