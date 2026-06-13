@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ptBR } from 'date-fns/locale'
 import { ChartDataType } from '@renderer/types/ChartDataType'
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
+import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 
 type RemoteChartDataType = {
   dia: string
@@ -13,11 +14,13 @@ export function FaturamentoChart(): React.JSX.Element {
   const [chartData, setChartData] = useState<ChartDataType<Date, number>[]>()
   const { month, year } = useApplicationDate()
 
+  const { httpClient } = useHttpClient()
+
   const getChartData = useCallback(async (): Promise<ChartDataType<Date, number>[]> => {
-    const result = await fetch(
-      `${import.meta.env.VITE_API_HOST}/dashboard/faturamento-por-dia?ano=${year}&mes=${month}`
-    )
-    const remoteData: RemoteChartDataType[] = await result.json()
+    const remoteData = await httpClient.get<RemoteChartDataType[]>({
+      url: `/dashboard/faturamento-por-dia?ano=${year}&mes=${month}`
+    })
+
     return remoteData.map((value) => {
       const splitedDate = value.dia.split('-')
 
@@ -30,7 +33,7 @@ export function FaturamentoChart(): React.JSX.Element {
         y: value.faturamento
       }
     })
-  }, [month, year])
+  }, [month, year, httpClient])
 
   const data = useMemo(
     () => ({

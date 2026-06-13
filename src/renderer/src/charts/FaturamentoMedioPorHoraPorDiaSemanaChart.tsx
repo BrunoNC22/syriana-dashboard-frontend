@@ -1,4 +1,5 @@
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
+import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { ChartDataType } from '@renderer/types/ChartDataType'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Line } from 'react-chartjs-2'
@@ -17,20 +18,19 @@ export const FaturamentoMedioPorHoraPorDiaSemanaChart = ({
 }: FaturamentoMedioPorHoraPorDiaSemanaChartProps): React.JSX.Element => {
   const [chartData, setChartData] = useState<ChartDataType<string, number>[]>()
   const { month, year } = useApplicationDate()
+  const { httpClient } = useHttpClient()
 
   const getChatData = useCallback(async (): Promise<ChartDataType<string, number>[]> => {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_HOST}/dashboard/horario-de-pico?diaSemana=${weekDay}&ano=${year}&mes=${month}`
-    )
-
-    const remoteData: HoraMediaFaturamentoType[] = await response.json()
+    const remoteData = await httpClient.get<HoraMediaFaturamentoType[]>({
+      url: `/dashboard/horario-de-pico?diaSemana=${weekDay}&ano=${year}&mes=${month}`
+    })
     return remoteData.map((value) => {
       return {
         x: value.hora,
         y: value.mediaFaturamento
       }
     })
-  }, [month, year, weekDay])
+  }, [month, year, weekDay, httpClient])
 
   const yAxisStepSize = useMemo(() => {
     if (!chartData) return 500

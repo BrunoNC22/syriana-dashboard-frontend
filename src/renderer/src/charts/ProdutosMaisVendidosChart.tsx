@@ -1,4 +1,5 @@
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
+import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Bar } from 'react-chartjs-2'
 
@@ -15,14 +16,14 @@ type ChartDataType = {
 export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
   const [chartData, setChartData] = useState<ChartDataType[]>()
   const { month, year } = useApplicationDate()
+  const { httpClient } = useHttpClient()
 
   const getChartData = useCallback(async (): Promise<ChartDataType[]> => {
-    const result = await fetch(
-      `${import.meta.env.VITE_API_HOST}/dashboard/produtos-mais-vendidos?ano=${year}&mes=${month}`
-    )
-    const remoteData: RemoteProdutoVendidoType[] = await result.json()
+    const remoteData = await httpClient.get<RemoteProdutoVendidoType[]>({
+      url: `/dashboard/produtos-mais-vendidos?ano=${year}&mes=${month}`
+    })
     return remoteData.map((value) => ({ x: value.nomeProduto, y: value.totalVendido }))
-  }, [month, year])
+  }, [month, year, httpClient])
 
   const data = useMemo(
     () => ({

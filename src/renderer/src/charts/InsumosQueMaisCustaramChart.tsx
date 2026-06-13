@@ -1,4 +1,5 @@
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
+import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { ChartDataType } from '@renderer/types/ChartDataType'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Bar } from 'react-chartjs-2'
@@ -16,16 +17,15 @@ export const InsumosQueMaisCustaramChart = (): React.JSX.Element => {
   const [remoteData, setRemoteData] = useState<RemoteData[]>()
 
   const { month, year } = useApplicationDate()
+  const { httpClient } = useHttpClient()
 
   const getChartData = useCallback(async () => {
-    const result = await fetch(
-      `${import.meta.env.VITE_API_HOST}/dashboard/insumos-que-mais-custaram?ano=${year}&mes=${month}`
-    )
-
-    const resultData: RemoteData[] = await result.json()
+    const resultData = await httpClient.get<RemoteData[]>({
+      url: `/dashboard/insumos-que-mais-custaram?ano=${year}&mes=${month}`
+    })
     const chartData = resultData.map((data) => ({ x: data.nome, y: data.valorTotal }))
     return { resultData, chartData }
-  }, [month, year])
+  }, [month, year, httpClient])
 
   const data = useMemo(
     () => ({

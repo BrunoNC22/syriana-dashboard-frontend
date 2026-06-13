@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { DashboardKPI } from './DashboardKPI'
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
+import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 
 export const TotalVendidoKPI = (): React.JSX.Element => {
   const [totalVendido, setTotalVendido] = useState<number | null>(null)
   const { month, year } = useApplicationDate()
+  const { httpClient } = useHttpClient()
 
   const getTotalVendido = useCallback(async () => {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_HOST}/dashboard/total-vendido?ano=${year}&mes=${month}`
-    )
-
-    const responseData: number = await response.json()
+    const responseData = await httpClient.get<number>({
+      url: `/dashboard/total-vendido?ano=${year}&mes=${month}`
+    })
     return responseData
-  }, [year, month])
+  }, [year, month, httpClient])
 
   const formatter = useMemo(() => {
     const formatter = new Intl.NumberFormat('pt-BR', {

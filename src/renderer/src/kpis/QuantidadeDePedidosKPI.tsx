@@ -1,19 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { DashboardKPI } from './DashboardKPI'
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
+import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 
 export const QuantidadeDePedidosKPI = (): React.JSX.Element => {
   const [quantidadeDePedidos, setQuantidadeDePedidos] = useState<number | null>(null)
   const { month, year } = useApplicationDate()
+  const { httpClient } = useHttpClient()
 
   const getQuantidadeDePedidos = useCallback(async () => {
-    const response = await fetch(
-      `${import.meta.env.VITE_API_HOST}/dashboard/quantidade-de-pedidos?ano=${year}&mes=${month}`
-    )
-
-    const responseData: number = await response.json()
+    const responseData = await httpClient.get<number>({
+      url: `/dashboard/quantidade-de-pedidos?ano=${year}&mes=${month}`
+    })
     return responseData
-  }, [year, month])
+  }, [year, month, httpClient])
 
   useEffect(() => {
     getQuantidadeDePedidos().then((value) => setQuantidadeDePedidos(value))
