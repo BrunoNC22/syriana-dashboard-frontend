@@ -11,8 +11,8 @@ import { FaturamentoMedioPorHoraPorDiaSemanaWidget } from '@renderer/widgets/Fat
 import { InsumosQueMaisCustaramChart } from '@renderer/charts/InsumosQueMaisCustaramChart'
 
 export const DashboardContent = (): JSX.Element => {
-  const { month, setMonth, setYear, year } = useApplicationDate()
-  const [date, setDate] = useState(new Date(year, month - 1))
+  const { setMonth, setYear } = useApplicationDate()
+  const [date, setDate] = useState(new Date())
 
   useEffect(() => {
     setMonth(date.getMonth() + 1)
