@@ -1,18 +1,109 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
-import { join } from 'path'
-import { electronApp, optimizer, is } from '@electron-toolkit/utils'
-import icon from '../../resources/icon.png?asset'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
 
-function createWindow(): void {
-  // Create the browser window.
+import { join } from 'path'
+
+import { spawn, ChildProcess } from 'child_process'
+
+import { existsSync, writeFileSync } from 'fs'
+
+import { electronApp, optimizer, is } from '@electron-toolkit/utils'
+
+import icon from '../../resources/icon.png?asset'
+import { FileLoggerAdapter } from './logger/FileLoggerAdapter'
+import config from '../shared/config'
+
+let backendProcess: ChildProcess | null = null
+
+const CONFIG_FILE_NAME = 'server-config.json'
+const logger = new FileLoggerAdapter(join(process.cwd(), 'log.txt'))
+
+function getConfigPath(): string {
+  const configFilePath = join(process.cwd(), CONFIG_FILE_NAME)
+  logger.info(`Caminho do arquivo de configuração obtido: ${configFilePath}`)
+
+  return configFilePath
+}
+
+function configExists(): boolean {
+  return existsSync(getConfigPath())
+}
+
+function startBackend(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    logger.info('Tentando iniciar backend')
+    // desenvolvimento
+    if (!app.isPackaged) {
+      logger.info(
+        'App em desenvolvimento, backend deve ser iniciado externamente. Pulando para proxima etapa'
+      )
+      return resolve()
+    }
+
+    const backendPath = join(process.resourcesPath, 'backend', 'www.exe')
+    logger.info(`Iniciando backend da pasta ${backendPath}`)
+
+    backendProcess = spawn(backendPath, [], {
+      windowsHide: true,
+      stdio: 'ignore'
+    })
+
+    backendProcess.on('spawn', () => {
+      logger.info('Backend iniciado')
+      resolve()
+    })
+
+    backendProcess.on('error', (err) => {
+      logger.error(`Erro ao iniciar backend: ${err.name}\n${err.message}\n${err.stack}`)
+      reject(err)
+    })
+
+    backendProcess.on('exit', (code) => {
+      logger.info(`Backend encerrado com código ${code}`)
+    })
+  })
+}
+
+async function waitForBackend(): Promise<void> {
+  await logger.info(`Buscando contato com backend.`)
+  // desenvolvimento
+  if (!app.isPackaged) {
+    await logger.info('App em desenvolvimento, pulando para a proxima etapa.')
+    return
+  }
+
+  for (let i = 0; i < 30; i++) {
+    try {
+      await logger.info(`Tentativa n ${i}...`)
+      const response = await fetch(
+        `${config.server.protocol}://${config.server.host}:${config.server.port}`
+      )
+
+      if (response.ok || response.status < 500) {
+        return
+      }
+    } catch {
+      await logger.info('API ainda não está pronta')
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+  }
+  await logger.error('Backend não iniciou a tempo')
+  throw new Error('Backend não iniciou a tempo')
+}
+
+function createMainWindow(): void {
+  logger.info('Criando tela principal')
   const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+    width: 1400,
+    height: 900,
     show: false,
     autoHideMenuBar: true,
+
     ...(process.platform === 'linux' ? { icon } : {}),
+
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
+
       sandbox: false
     }
   })
@@ -21,54 +112,345 @@ function createWindow(): void {
     mainWindow.show()
   })
 
-  mainWindow.webContents.setWindowOpenHandler((details) => {
-    shell.openExternal(details.url)
-    return { action: 'deny' }
+  mainWindow.on('closed', () => {
+    app.quit()
   })
 
-  // HMR for renderer base on electron-vite cli.
-  // Load the remote URL for development or the local html file for production.
+  mainWindow.webContents.setWindowOpenHandler((details) => {
+    shell.openExternal(details.url)
+
+    return {
+      action: 'deny'
+    }
+  })
+
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
+    logger.info(
+      `Tela principal sera carregada a partir da url ${process.env['ELECTRON_RENDERER_URL']}`
+    )
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    const mainWindowFilePath = join(__dirname, '../renderer/index.html')
+    logger.info(`Tela principal sera carregada a partir do arquivo ${mainWindowFilePath}`)
+    mainWindow.loadFile(mainWindowFilePath)
   }
 }
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.whenReady().then(() => {
-  // Set app user model id for windows
+function createConfigWindow(): BrowserWindow {
+  const configWindow = new BrowserWindow({
+    width: 700,
+    height: 600,
+    resizable: false,
+    autoHideMenuBar: true,
+
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false
+    }
+  })
+
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8" />
+      <title>Configuração do Servidor</title>
+
+      <style>
+        body {
+          font-family: Arial;
+          padding: 24px;
+          background: #181818;
+          color: white;
+        }
+
+        h1 {
+          margin-bottom: 24px;
+        }
+
+        .field {
+          margin-bottom: 16px;
+        }
+
+        label {
+          display: block;
+          margin-bottom: 6px;
+        }
+
+        input {
+          width: 100%;
+          padding: 10px;
+          box-sizing: border-box;
+        }
+
+        .database-row {
+          display: flex;
+          gap: 8px;
+        }
+
+        button {
+          padding: 10px 16px;
+          cursor: pointer;
+        }
+
+        .save-button {
+          width: 100%;
+          margin-top: 24px;
+        }
+
+      </style>
+    </head>
+
+    <body>
+      <h1>
+        Configuração do Firebird
+      </h1>
+
+      <div class="field">
+        <label>
+          Host
+        </label>
+        <input
+          id="host"
+          value="localhost"
+        />
+      </div>
+
+      <div class="field">
+        <label>
+          Porta
+        </label>
+        <input
+          id="port"
+          type="number"
+          value="3050"
+        />
+      </div>
+
+      <div class="field">
+        <label>
+          Usuário
+        </label>
+        <input
+          id="user"
+          value="SYSDBA"
+        />
+      </div>
+
+      <div class="field">
+        <label>
+          Senha
+        </label>
+        <input
+          id="password"
+          value="masterkey"
+        />
+      </div>
+
+      <div class="field">
+        <label>
+          Arquivo .fdb
+        </label>
+        <div class="database-row">
+          <input id="databaseFile" />
+          <button
+            id="browseButton"
+          >
+            Procurar
+          </button>
+        </div>
+      </div>
+
+      <button
+        class="save-button"
+        id="saveButton"
+      >
+        Salvar Configuração
+      </button>
+
+      <script>
+        const {
+          ipcRenderer
+        } = require('electron')
+
+        const browseButton =
+          document.getElementById(
+            'browseButton'
+          )
+
+        browseButton.addEventListener(
+          'click',
+          async () => {
+
+            const result =
+              await ipcRenderer.invoke(
+                'select-database-file'
+              )
+
+            if (result) {
+
+              document.getElementById(
+                'databaseFile'
+              ).value = result
+            }
+          }
+        )
+
+        const saveButton =
+          document.getElementById(
+            'saveButton'
+          )
+
+        saveButton.addEventListener(
+          'click',
+          async () => {
+
+            const config = {
+
+              host:
+                document.getElementById(
+                  'host'
+                ).value,
+
+              port:
+                Number(
+                  document.getElementById(
+                    'port'
+                  ).value
+                ),
+
+              user:
+                document.getElementById(
+                  'user'
+                ).value,
+
+              password:
+                document.getElementById(
+                  'password'
+                ).value,
+
+              databaseFile:
+                document.getElementById(
+                  'databaseFile'
+                ).value
+            }
+
+            await ipcRenderer.invoke(
+              'save-server-config',
+              config
+            )
+          }
+        )
+
+      </script>
+    </body>
+    </html>
+  `
+
+  configWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html))
+
+  return configWindow
+}
+
+async function ensureServerConfig(): Promise<void> {
+  return new Promise((resolve) => {
+    if (configExists()) {
+      logger.info('Arquivo de configuração ja existe, pulando setup de configuração')
+      return resolve()
+    }
+
+    logger.info('Arquivo de configuração não existe, iniciando tela de configuração.')
+    const configWindow = createConfigWindow()
+
+    ipcMain.handle('select-database-file', async () => {
+      const result = await dialog.showOpenDialog(configWindow, {
+        properties: ['openFile'],
+
+        filters: [
+          {
+            name: 'Firebird Database',
+            extensions: ['fdb']
+          }
+        ]
+      })
+
+      if (result.canceled) {
+        return null
+      }
+
+      return result.filePaths[0]
+    })
+
+    ipcMain.handle('save-server-config', async (_, config) => {
+      if (!config.databaseFile) {
+        dialog.showErrorBox('Erro', 'Selecione um arquivo .fdb')
+
+        return
+      }
+
+      const configInfo = JSON.stringify(config, null, 2)
+      logger.info(`Informações de configuração obtidas: ${configInfo}\nSalvando configurações...`)
+
+      logger.info('Escrevendo no arquivo de configuração...').then(async () => {
+        writeFileSync(getConfigPath(), configInfo)
+        await logger.info('Informações salvas com sucesso!')
+        configWindow.close()
+        return resolve()
+      })
+    })
+  })
+}
+
+app.whenReady().then(async () => {
   electronApp.setAppUserModelId('com.electron')
 
-  // Default open or close DevTools by F12 in development
-  // and ignore CommandOrControl + R in production.
-  // see https://github.com/alex8088/electron-toolkit/tree/master/packages/utils
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
   })
 
-  // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  ipcMain.on('log:info', (_, data) => {
+    logger.info(data)
+  })
+  ipcMain.on('log:warning', (_, data) => {
+    logger.warning(data)
+  })
+  ipcMain.on('log:error', (_, data) => {
+    logger.error(data)
+  })
 
-  createWindow()
+  await ensureServerConfig()
+
+  await startBackend()
+
+  await waitForBackend()
+
+  createMainWindow()
 
   app.on('activate', function () {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow()
+    if (BrowserWindow.getAllWindows().length === 0) {
+      createMainWindow()
+    }
   })
 })
 
-// Quit when all windows are closed, except on macOS. There, it's common
-// for applications and their menu bar to stay active until the user quits
-// explicitly with Cmd + Q.
-app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin') {
-    app.quit()
+// app.on('window-all-closed', () => {
+//   if (backendProcess) {
+//     backendProcess.kill()
+
+//     backendProcess = null
+//   }
+
+//   if (process.platform !== 'darwin') {
+//     app.quit()
+//   }
+// })
+
+app.on('before-quit', () => {
+  logger.info('Fechando aplicação')
+  if (backendProcess) {
+    logger.info('Matando backend')
+    backendProcess.kill()
+
+    backendProcess = null
   }
 })
-
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
