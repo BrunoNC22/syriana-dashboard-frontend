@@ -1,0 +1,41 @@
+{
+  "name": "frontend",
+  "targets": {
+    "serve": {
+      "executor": "nx:run-commands",
+      "options": {
+        "commands": [
+          "wait-on http://127.0.0.1:8080/dashboard/total-vendido?ano=2026",
+          "npm run dev"
+        ],
+        "parallel": false,
+        "cwd": "apps/frontend"
+      }
+    },
+
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": [
+        "{projectRoot}/dist"
+      ],
+      "dependsOn": [
+        "backend:build"
+      ],
+      "options": {
+        "command": "npm run build:win",
+        "cwd": "apps/frontend"
+      }
+    },
+
+    "installer": {
+      "executor": "nx:run-commands",
+      "dependsOn": [
+        "backend:build"
+      ],
+      "options": {
+        "command": "npm run build:win",
+        "cwd": "apps/frontend"
+      }
+    }
+  }
+}
