@@ -6,3 +6,5 @@ out
 *.log*
 .vscode
 .env
+log.txt
+server-config.json
