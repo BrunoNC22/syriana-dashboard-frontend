@@ -1,8 +1,11 @@
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Line } from 'react-chartjs-2'
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
+import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateBoundary'
+import { QueryChartLoadingState } from '@renderer/components/query-state/QueryLoadingState'
 import { ChartDataType } from '@renderer/types/ChartDataType'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Line } from 'react-chartjs-2'
 
 type HoraMediaFaturamentoType = {
   hora: string
@@ -16,82 +19,70 @@ type FaturamentoMedioPorHoraPorDiaSemanaChartProps = {
 export const FaturamentoMedioPorHoraPorDiaSemanaChart = ({
   weekDay
 }: FaturamentoMedioPorHoraPorDiaSemanaChartProps): React.JSX.Element => {
-  const [chartData, setChartData] = useState<ChartDataType<string, number>[]>()
   const { month, year } = useApplicationDate()
   const { httpClient } = useHttpClient()
 
-  const getChatData = useCallback(async (): Promise<ChartDataType<string, number>[]> => {
-    const remoteData = await httpClient.get<HoraMediaFaturamentoType[]>({
-      url: `/dashboard/horario-de-pico?diaSemana=${weekDay}&ano=${year}&mes=${month}`
-    })
-    return remoteData.map((value) => {
-      return {
-        x: value.hora,
-        y: value.mediaFaturamento
-      }
-    })
-  }, [month, year, weekDay, httpClient])
+  const query = useQuery({
+    queryKey: ['horario-de-pico', weekDay, year, month],
+    queryFn: async (): Promise<ChartDataType<string, number>[]> => {
+      const remoteData = await httpClient.get<HoraMediaFaturamentoType[]>({
+        url: `/dashboard/horario-de-pico?diaSemana=${weekDay}&ano=${year}&mes=${month}`
+      })
+      return remoteData.map((value) => ({ x: value.hora, y: value.mediaFaturamento }))
+    }
+  })
 
-  const yAxisStepSize = useMemo(() => {
-    if (!chartData) return 500
-    if (chartData.length === 0) return 500
-    const stepSize =
-      chartData.reduce((acc, curr) => {
-        if (acc < curr.y) return curr.y
-        return acc
-      }, 0) / 5
-
-    return stepSize
-  }, [chartData])
-
-  const data = useMemo(
-    () => ({
-      labels: [],
-      datasets: [
-        {
-          label: 'Faturamento médio em R$',
-          data: chartData
-        }
-      ]
-    }),
-    [chartData]
+  const formatter = useMemo(
+    () =>
+      new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        notation: 'compact',
+        compactDisplay: 'short',
+        maximumFractionDigits: 2
+      }),
+    []
   )
 
-  const formatter = useMemo(() => {
-    const formatter = new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      notation: 'compact',
-      compactDisplay: 'short', // Usa 'mil' e 'mi'
-      maximumFractionDigits: 2
-    })
-    return formatter
-  }, [])
-
-  useEffect(() => {
-    getChatData().then((value) => setChartData(value))
-  }, [getChatData])
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexGrow: '1',
-        height: '300px'
+    <QueryStateBoundary
+      query={query}
+      isEmpty={(data) => {
+        if (!data) return true
+        const somaDoValorTotal = data.reduce((previous, current) => previous + current.y, 0)
+        if (somaDoValorTotal) return false
+        else return true
       }}
+      emptyMessage="Não existem dados de faturamento médio para este periodo"
+      loadingPlaceholder={<QueryChartLoadingState height="300px" />}
     >
-      <Line
-        options={{
-          scales: {
-            y: {
-              ticks: {
-                stepSize: yAxisStepSize,
-                callback: (value) => formatter.format(value as number)
-              }
-            }
-          }
-        }}
-        data={data}
-      />
-    </div>
+      {(data) => {
+        const yAxisStepSize =
+          data.length === 0 ? 500 : data.reduce((acc, curr) => (acc < curr.y ? curr.y : acc), 0) / 5
+
+        const chartData = {
+          labels: [],
+          datasets: [{ label: 'Faturamento médio em R$', data }]
+        }
+
+        return (
+          <div className="h-full">
+            <Line
+              options={{
+                scales: {
+                  y: {
+                    ticks: {
+                      stepSize: yAxisStepSize,
+                      callback: (value) => formatter.format(value as number)
+                    }
+                  }
+                }
+              }}
+              data={chartData}
+            />
+          </div>
+        )
+      }}
+    </QueryStateBoundary>
   )
 }

@@ -14,7 +14,7 @@ export const DashboardChart = ({
   return (
     <div
       className={
-        'bg-surface-container p-card-padding rounded-xl border border-outline-variant shadow-md relative group overflow-hidden ' +
+        'bg-surface-container p-card-padding rounded-xl border border-outline-variant shadow-md relative group overflow-hidden h-[450px] flex flex-col ' +
         className
       }
     >
@@ -22,8 +22,9 @@ export const DashboardChart = ({
         <h3 className="font-h3 text-h3 text-on-surface">{title}</h3>
         {TitleElements ? <TitleElements /> : undefined}
       </div>
-
-      <ChartElement />
+      <div className="grow-[1]">
+        <ChartElement />
+      </div>
     </div>
   )
 }

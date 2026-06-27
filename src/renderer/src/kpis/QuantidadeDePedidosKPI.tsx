@@ -1,30 +1,41 @@
-import { useCallback, useEffect, useState } from 'react'
-import { DashboardKPI } from './DashboardKPI'
+import { useQuery } from '@tanstack/react-query'
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
+import { DashboardKPI } from './DashboardKPI'
+import { useMemo } from 'react'
 
 export const QuantidadeDePedidosKPI = (): React.JSX.Element => {
-  const [quantidadeDePedidos, setQuantidadeDePedidos] = useState<number | null>(null)
   const { month, year } = useApplicationDate()
   const { httpClient } = useHttpClient()
 
-  const getQuantidadeDePedidos = useCallback(async () => {
-    const responseData = await httpClient.get<number>({
-      url: `/dashboard/quantidade-de-pedidos?ano=${year}&mes=${month}`
-    })
-    return responseData
-  }, [year, month, httpClient])
+  const { data, isError, refetch, isLoading, isRefetching } = useQuery({
+    queryKey: ['quantidade-de-pedidos', year, month],
+    queryFn: () =>
+      httpClient.get<number>({
+        url: `/dashboard/quantidade-de-pedidos?ano=${year}&mes=${month}`
+      })
+  })
 
-  useEffect(() => {
-    getQuantidadeDePedidos().then((value) => setQuantidadeDePedidos(value))
-  }, [getQuantidadeDePedidos])
+  const isEmpty = useMemo(() => {
+    if (!data) return true
+    return false
+  }, [data])
+
   return (
     <DashboardKPI
       title="Quantidade Total de Pedidos"
-      text={`${quantidadeDePedidos}`}
       mainIcon="shopping_cart"
       info="+5.2% em relação ao mês anterior"
       infoIcon="trending_up"
+      text={`${data}`}
+      emptyMessage="Não há pedidos neste período"
+      isEmpty={isEmpty}
+      isError={isError}
+      onRetry={() => {
+        refetch()
+      }}
+      isLoading={isLoading}
+      isRefetching={isRefetching}
     />
   )
 }

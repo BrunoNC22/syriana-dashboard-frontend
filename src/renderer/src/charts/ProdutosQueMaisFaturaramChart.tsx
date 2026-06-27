@@ -1,7 +1,10 @@
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { Bar } from 'react-chartjs-2'
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Bar } from 'react-chartjs-2'
+import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateBoundary'
+import { QueryChartLoadingState } from '@renderer/components/query-state/QueryLoadingState'
 
 type ProdutoFaturamentoType = {
   nome: string
@@ -14,80 +17,71 @@ type ChartDataType = {
 }
 
 export const ProdutosQueMaisFaturaramChart = (): React.JSX.Element => {
-  const [chartData, setChartData] = useState<ChartDataType[]>()
   const { month, year } = useApplicationDate()
   const { httpClient } = useHttpClient()
 
-  const getChartData = useCallback(async (): Promise<ChartDataType[]> => {
-    const remoteData = await httpClient.get<ProdutoFaturamentoType[]>({
-      url: `/dashboard/faturamento-por-produto?ano=${year}&mes=${month}`
-    })
-    return remoteData.map((value) => ({ x: value.nome, y: value.faturamento }))
-  }, [year, month, httpClient])
+  const query = useQuery({
+    queryKey: ['faturamento-por-produto', year, month],
+    queryFn: async (): Promise<ChartDataType[]> => {
+      const remoteData = await httpClient.get<ProdutoFaturamentoType[]>({
+        url: `/dashboard/faturamento-por-produto?ano=${year}&mes=${month}`
+      })
+      return remoteData.map((value) => ({ x: value.nome, y: value.faturamento }))
+    }
+  })
 
-  const data = useMemo(
-    () => ({
-      datasets: [
-        {
-          label: 'Valor vendido em R$',
-          data: chartData,
-          maxBarThickness: 25
-        }
-      ]
-    }),
-    [chartData]
+  const formatter = useMemo(
+    () =>
+      new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        notation: 'compact',
+        compactDisplay: 'short',
+        maximumFractionDigits: 2
+      }),
+    []
   )
 
-  const formatter = useMemo(() => {
-    const formatter = new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-      notation: 'compact',
-      compactDisplay: 'short', // Usa 'mil' e 'mi'
-      maximumFractionDigits: 2
-    })
-
-    return formatter
-  }, [])
-
-  useEffect(() => {
-    getChartData().then((value) => setChartData(value))
-  }, [getChartData])
-
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexGrow: '1',
-        height: '300px'
-      }}
+    <QueryStateBoundary
+      query={query}
+      isEmpty={(d) => d.length === 0}
+      emptyMessage="Não existem dados de faturamento para este período"
+      loadingPlaceholder={<QueryChartLoadingState height="300px" />}
     >
-      <Bar
-        options={{
-          scales: {
-            x: {
-              ticks: {
-                callback: function (value) {
-                  const label = this.getLabelForValue(value as number)
-                  const limite = 10 // ajuste conforme sua necessidade
-
-                  if (typeof label === 'string' && label.length > limite) {
-                    return label.substring(0, limite) + '...'
+      {(data) => {
+        const chartData = {
+          datasets: [{ label: 'Valor vendido em R$', data, maxBarThickness: 25 }]
+        }
+        return (
+          <div className="h-full">
+            <Bar
+              options={{
+                scales: {
+                  x: {
+                    ticks: {
+                      callback: function (value) {
+                        const label = this.getLabelForValue(value as number)
+                        if (typeof label === 'string' && label.length > 10) {
+                          return label.substring(0, 10) + '...'
+                        }
+                        return label
+                      }
+                    }
+                  },
+                  y: {
+                    ticks: {
+                      stepSize: 2000,
+                      callback: (value) => formatter.format(value as number)
+                    }
                   }
-                  return label
                 }
-              }
-            },
-            y: {
-              ticks: {
-                stepSize: 2000,
-                callback: (value) => formatter.format(value as number)
-              }
-            }
-          }
-        }}
-        data={data}
-      />
-    </div>
+              }}
+              data={chartData}
+            />
+          </div>
+        )
+      }}
+    </QueryStateBoundary>
   )
 }
