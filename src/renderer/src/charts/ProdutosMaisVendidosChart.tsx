@@ -53,15 +53,19 @@ export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
                 onClick: (_, activeElements) => {
                   if (!activeElements.length) return
                   const actualData = data[activeElements[0].index]
-                  window.electron.openWindow(`/product-details/${actualData.id}`, {
-                    width: 500,
-                    height: 700,
-                    resizable: false,
-                    maximizable: false,
-                    minimizable: true,
-                    title: actualData.nomeProduto,
-                    center: true
-                  })
+                  const mesParam = month != null ? `&mes=${month}` : ''
+                  window.electron.openWindow(
+                    `/product-details/${actualData.id}?ano=${year}${mesParam}`,
+                    {
+                      width: 520,
+                      height: 720,
+                      resizable: false,
+                      maximizable: false,
+                      minimizable: true,
+                      title: actualData.nomeProduto,
+                      center: true
+                    }
+                  )
                 },
                 scales: {
                   x: {
