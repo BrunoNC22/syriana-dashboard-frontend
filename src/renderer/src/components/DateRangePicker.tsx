@@ -112,11 +112,22 @@ export default function DateRangePicker(): React.JSX.Element {
     setIsOpen(false)
   }
 
-  const handleRangeSelect = (selected: RdpRange | undefined): void => {
-    setTempRange(selected)
-    if (selected?.from && selected?.to) {
-      commit({ start: selected.from, end: selected.to })
+  const handleDayClick = (clicked: Date): void => {
+    const day = startOfDay(clicked)
+    const awaitingEnd = Boolean(tempRange?.from && !tempRange?.to)
+
+    if (!awaitingEnd) {
+      // Primeiro clique: define o início e mantém o popover aberto.
+      setTempRange({ from: day, to: undefined })
+      return
     }
+
+    // Segundo clique: fecha a faixa (invertendo se for anterior ao início).
+    const first = tempRange!.from!
+    const start = day < first ? day : first
+    const end = day < first ? first : day
+    setTempRange({ from: start, to: end })
+    commit({ start, end })
   }
 
   return (
@@ -192,7 +203,7 @@ export default function DateRangePicker(): React.JSX.Element {
                     mode="range"
                     locale={ptBR}
                     selected={tempRange}
-                    onSelect={handleRangeSelect}
+                    onSelect={(_selected, triggerDate) => handleDayClick(triggerDate)}
                     numberOfMonths={1}
                     defaultMonth={range.start}
                     startMonth={new Date(MIN_YEAR, 0)}
