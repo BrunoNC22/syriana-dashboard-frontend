@@ -194,7 +194,7 @@ textarea {
   color: #e5e2e1;
 }
 
-/* Dia único selecionado (fora de faixa): borda dourada. */
-.rdp-theme .rdp-selected .rdp-day_button {
+/* Dia único selecionado (fora do meio da faixa): borda dourada. */
+.rdp-theme .rdp-selected:not(.rdp-range_middle) .rdp-day_button {
   border: 2px solid #e5c483;
 }
