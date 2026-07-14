@@ -1,10 +1,18 @@
 import { createContext, useContext } from 'react'
 
+export type DateRange = {
+  start: Date
+  end: Date
+}
+
 export type ApplicationDateContextInterface = {
-  month: number
-  setMonth: (newMonth: number) => void
-  year: number
-  setYear: (newYear: number) => void
+  /** Intervalo selecionado (datas locais, granularidade de dia). */
+  range: DateRange
+  setRange: (range: DateRange) => void
+  /** Data inicial no formato ISO `yyyy-MM-dd`, pronta para a query da API. */
+  startISO: string
+  /** Data final (inclusiva) no formato ISO `yyyy-MM-dd`. */
+  endISO: string
 }
 
 export const ApplicationDateContext = createContext<ApplicationDateContextInterface | null>(null)

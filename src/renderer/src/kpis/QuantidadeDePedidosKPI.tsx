@@ -5,14 +5,14 @@ import { DashboardKPI } from './DashboardKPI'
 import { useMemo } from 'react'
 
 export const QuantidadeDePedidosKPI = (): React.JSX.Element => {
-  const { month, year } = useApplicationDate()
+  const { startISO, endISO } = useApplicationDate()
   const { httpClient } = useHttpClient()
 
   const { data, isError, refetch, isLoading, isRefetching } = useQuery({
-    queryKey: ['quantidade-de-pedidos', year, month],
+    queryKey: ['quantidade-de-pedidos', startISO, endISO],
     queryFn: () =>
       httpClient.get<number>({
-        url: `/dashboard/quantidade-de-pedidos?ano=${year}&mes=${month}`
+        url: `/dashboard/quantidade-de-pedidos?dataInicio=${startISO}&dataFim=${endISO}`
       })
   })
 

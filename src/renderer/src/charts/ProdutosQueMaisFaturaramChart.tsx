@@ -17,14 +17,14 @@ type ChartDataType = {
 }
 
 export const ProdutosQueMaisFaturaramChart = (): React.JSX.Element => {
-  const { month, year } = useApplicationDate()
+  const { startISO, endISO } = useApplicationDate()
   const { httpClient } = useHttpClient()
 
   const query = useQuery({
-    queryKey: ['faturamento-por-produto', year, month],
+    queryKey: ['faturamento-por-produto', startISO, endISO],
     queryFn: async (): Promise<ChartDataType[]> => {
       const remoteData = await httpClient.get<ProdutoFaturamentoType[]>({
-        url: `/dashboard/faturamento-por-produto?ano=${year}&mes=${month}`
+        url: `/dashboard/faturamento-por-produto?dataInicio=${startISO}&dataFim=${endISO}`
       })
       return remoteData.map((value) => ({ x: value.nome, y: value.faturamento }))
     }

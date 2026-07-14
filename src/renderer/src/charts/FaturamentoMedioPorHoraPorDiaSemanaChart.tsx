@@ -19,14 +19,14 @@ type FaturamentoMedioPorHoraPorDiaSemanaChartProps = {
 export const FaturamentoMedioPorHoraPorDiaSemanaChart = ({
   weekDay
 }: FaturamentoMedioPorHoraPorDiaSemanaChartProps): React.JSX.Element => {
-  const { month, year } = useApplicationDate()
+  const { startISO, endISO } = useApplicationDate()
   const { httpClient } = useHttpClient()
 
   const query = useQuery({
-    queryKey: ['horario-de-pico', weekDay, year, month],
+    queryKey: ['horario-de-pico', weekDay, startISO, endISO],
     queryFn: async (): Promise<ChartDataType<string, number>[]> => {
       const remoteData = await httpClient.get<HoraMediaFaturamentoType[]>({
-        url: `/dashboard/horario-de-pico?diaSemana=${weekDay}&ano=${year}&mes=${month}`
+        url: `/dashboard/horario-de-pico?diaSemana=${weekDay}&dataInicio=${startISO}&dataFim=${endISO}`
       })
       return remoteData.map((value) => ({ x: value.hora, y: value.mediaFaturamento }))
     }

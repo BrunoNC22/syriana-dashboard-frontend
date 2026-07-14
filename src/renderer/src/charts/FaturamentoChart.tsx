@@ -14,14 +14,14 @@ type RemoteChartDataType = {
 }
 
 export function FaturamentoChart(): React.JSX.Element {
-  const { month, year } = useApplicationDate()
+  const { startISO, endISO } = useApplicationDate()
   const { httpClient } = useHttpClient()
 
   const query = useQuery({
-    queryKey: ['faturamento-por-dia', year, month],
+    queryKey: ['faturamento-por-dia', startISO, endISO],
     queryFn: async (): Promise<ChartDataType<Date, number>[]> => {
       const remoteData = await httpClient.get<RemoteChartDataType[]>({
-        url: `/dashboard/faturamento-por-dia?ano=${year}&mes=${month}`
+        url: `/dashboard/faturamento-por-dia?dataInicio=${startISO}&dataFim=${endISO}`
       })
       return remoteData.map((value) => {
         const [y, m, d] = value.dia.split('-').map(parseFloat)

@@ -1,6 +1,8 @@
 import { useMemo } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
+import { endOfMonth, format, isSameDay, parseISO, startOfMonth } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateBoundary'
 
@@ -20,11 +22,6 @@ type ProdutoDetalhes = {
   margemLucro: number
   insumos: InsumoDoProduto[]
 }
-
-const MONTH_NAMES = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-]
 
 type MetricCardProps = {
   label: string
@@ -70,16 +67,17 @@ export function ProductDetailsPage(): React.JSX.Element {
   const { productId } = useParams<{ productId: string }>()
   const [searchParams] = useSearchParams()
 
-  const ano = searchParams.get('ano') ?? String(new Date().getFullYear())
-  const mes = searchParams.get('mes')
+  const dataInicio =
+    searchParams.get('dataInicio') ?? format(startOfMonth(new Date()), 'yyyy-MM-dd')
+  const dataFim = searchParams.get('dataFim') ?? format(endOfMonth(new Date()), 'yyyy-MM-dd')
 
   const { httpClient } = useHttpClient()
 
   const query = useQuery({
-    queryKey: ['produto-detalhes', productId, ano, mes],
+    queryKey: ['produto-detalhes', productId, dataInicio, dataFim],
     queryFn: (): Promise<ProdutoDetalhes> =>
       httpClient.get<ProdutoDetalhes>({
-        url: `/dashboard/produto-detalhes?id=${productId}&ano=${ano}${mes ? `&mes=${mes}` : ''}`
+        url: `/dashboard/produto-detalhes?id=${productId}&dataInicio=${dataInicio}&dataFim=${dataFim}`
       })
   })
 
@@ -95,9 +93,13 @@ export function ProductDetailsPage(): React.JSX.Element {
   )
 
   const periodLabel = useMemo(() => {
-    if (mes) return `${MONTH_NAMES[Number(mes) - 1]} de ${ano}`
-    return `Ano de ${ano}`
-  }, [ano, mes])
+    const inicio = parseISO(dataInicio)
+    const fim = parseISO(dataFim)
+    if (isSameDay(inicio, fim)) {
+      return format(inicio, "dd 'de' MMMM 'de' yyyy", { locale: ptBR })
+    }
+    return `${format(inicio, 'dd/MM/yyyy')} – ${format(fim, 'dd/MM/yyyy')}`
+  }, [dataInicio, dataFim])
 
   return (
     <div className="min-h-screen bg-background text-on-surface">

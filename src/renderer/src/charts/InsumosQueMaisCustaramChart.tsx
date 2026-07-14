@@ -20,14 +20,14 @@ type ChartPoint = {
 }
 
 export const InsumosQueMaisCustaramChart = (): React.JSX.Element => {
-  const { month, year } = useApplicationDate()
+  const { startISO, endISO } = useApplicationDate()
   const { httpClient } = useHttpClient()
 
   const query = useQuery({
-    queryKey: ['insumos-que-mais-custaram', year, month],
+    queryKey: ['insumos-que-mais-custaram', startISO, endISO],
     queryFn: () =>
       httpClient.get<RemoteData[]>({
-        url: `/dashboard/insumos-que-mais-custaram?ano=${year}&mes=${month}`
+        url: `/dashboard/insumos-que-mais-custaram?dataInicio=${startISO}&dataFim=${endISO}`
       })
   })
 

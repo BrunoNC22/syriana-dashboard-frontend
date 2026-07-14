@@ -111,3 +111,63 @@ input,
 textarea {
   user-select: text;
 }
+
+/* ---------------------------------------------------------------- */
+/* REACT-DAY-PICKER — tema escuro/dourado                            */
+/* ---------------------------------------------------------------- */
+
+.rdp-root {
+  --rdp-accent-color: #e5c483;
+  --rdp-accent-background-color: rgba(229, 196, 131, 0.16);
+  --rdp-today-color: #e5c483;
+  --rdp-range_middle-background-color: rgba(229, 196, 131, 0.16);
+  --rdp-range_middle-color: #e5e2e1;
+  --rdp-range_start-background: #e5c483;
+  --rdp-range_end-background: #e5c483;
+  --rdp-day-width: 38px;
+  --rdp-day-height: 38px;
+  --rdp-day_button-width: 38px;
+  --rdp-day_button-height: 38px;
+  --rdp-day_button-border-radius: 8px;
+
+  margin: 0;
+  color: #e5e2e1;
+  font-size: 14px;
+}
+
+.rdp-root .rdp-chevron {
+  fill: #e5c483;
+}
+
+.rdp-root .rdp-weekday {
+  color: #998f81;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.rdp-root .rdp-month_caption {
+  color: #e5e2e1;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.rdp-root .rdp-day_button:hover {
+  background-color: rgba(229, 196, 131, 0.1);
+}
+
+.rdp-root .rdp-today:not(.rdp-selected) .rdp-day_button {
+  border: 1px solid rgba(229, 196, 131, 0.4);
+}
+
+.rdp-root .rdp-range_start .rdp-day_button,
+.rdp-root .rdp-range_end .rdp-day_button {
+  background-color: #e5c483;
+  color: #402d00;
+  font-weight: 700;
+}
+
+.rdp-root .rdp-range_middle .rdp-day_button {
+  background-color: rgba(229, 196, 131, 0.16);
+  color: #e5e2e1;
+}

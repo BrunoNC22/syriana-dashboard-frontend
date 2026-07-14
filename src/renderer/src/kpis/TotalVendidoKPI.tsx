@@ -5,13 +5,15 @@ import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { DashboardKPI } from './DashboardKPI'
 
 export const TotalVendidoKPI = (): React.JSX.Element => {
-  const { month, year } = useApplicationDate()
+  const { startISO, endISO } = useApplicationDate()
   const { httpClient } = useHttpClient()
 
   const { data, isError, isLoading, isRefetching, refetch } = useQuery({
-    queryKey: ['total-vendido', year, month],
+    queryKey: ['total-vendido', startISO, endISO],
     queryFn: () =>
-      httpClient.get<number>({ url: `/dashboard/total-vendido?ano=${year}&mes=${month}` })
+      httpClient.get<number>({
+        url: `/dashboard/total-vendido?dataInicio=${startISO}&dataFim=${endISO}`
+      })
   })
 
   const isEmpty = useMemo(() => {

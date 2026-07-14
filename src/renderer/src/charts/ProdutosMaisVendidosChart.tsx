@@ -12,14 +12,14 @@ type RemoteProdutoVendidoType = {
 }
 
 export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
-  const { month, year } = useApplicationDate()
+  const { startISO, endISO } = useApplicationDate()
   const { httpClient } = useHttpClient()
 
   const query = useQuery({
-    queryKey: ['produtos-mais-vendidos', year, month],
+    queryKey: ['produtos-mais-vendidos', startISO, endISO],
     queryFn: (): Promise<RemoteProdutoVendidoType[]> =>
       httpClient.get<RemoteProdutoVendidoType[]>({
-        url: `/dashboard/produtos-mais-vendidos?ano=${year}&mes=${month}`
+        url: `/dashboard/produtos-mais-vendidos?dataInicio=${startISO}&dataFim=${endISO}`
       })
   })
 
@@ -53,9 +53,8 @@ export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
                 onClick: (_, activeElements) => {
                   if (!activeElements.length) return
                   const actualData = data[activeElements[0].index]
-                  const mesParam = month != null ? `&mes=${month}` : ''
                   window.electron.openWindow(
-                    `/product-details/${actualData.id}?ano=${year}${mesParam}`,
+                    `/product-details/${actualData.id}?dataInicio=${startISO}&dataFim=${endISO}`,
                     {
                       width: 640,
                       height: 760,
