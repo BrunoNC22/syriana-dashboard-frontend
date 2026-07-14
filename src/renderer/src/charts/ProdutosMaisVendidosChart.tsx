@@ -57,10 +57,10 @@ export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
                   window.electron.openWindow(
                     `/product-details/${actualData.id}?ano=${year}${mesParam}`,
                     {
-                      width: 520,
-                      height: 720,
-                      resizable: false,
-                      maximizable: false,
+                      width: 640,
+                      height: 760,
+                      resizable: true,
+                      maximizable: true,
                       minimizable: true,
                       title: actualData.nomeProduto,
                       center: true
