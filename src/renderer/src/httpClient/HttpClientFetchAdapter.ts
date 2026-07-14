@@ -21,11 +21,15 @@ export class HttpClientFetchAdapter implements IHttpClient {
         `${fullUrl} ${response.status} ${response.statusText} - ${durationInMs} ms`
       )
 
+      if (response.status >= 500) {
+        throw new Error(`${response.status} ${response.statusText}`)
+      }
+
       return result
     } catch (error) {
       const durationInMs = (performance.now() - startTime).toFixed(2)
 
-      await this.logger.error(`${fullUrl} FAILED - ${durationInMs} ms`)
+      await this.logger.error(`${fullUrl} FAILED - ${durationInMs} ms \n${error}`)
 
       throw error
     }

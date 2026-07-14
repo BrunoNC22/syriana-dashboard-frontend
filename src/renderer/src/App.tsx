@@ -1,5 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { Routes, Route } from 'react-router-dom'
 import { DashboardContent } from './components/DashboardContent'
+import { ProductDetailsPage } from './pages/ProductDetailsPage'
 import { ApplicationDateProvider } from './contexts/ApplicationDateProvider'
 import { HttpClientProvider } from './contexts/httpClient/HttpClientProvider'
 
@@ -17,7 +19,10 @@ function App(): React.JSX.Element {
     <QueryClientProvider client={queryClient}>
       <ApplicationDateProvider>
         <HttpClientProvider>
-          <DashboardContent />
+          <Routes>
+            <Route path="/" element={<DashboardContent />} />
+            <Route path="/product-details/:productId" element={<ProductDetailsPage />} />
+          </Routes>
         </HttpClientProvider>
       </ApplicationDateProvider>
     </QueryClientProvider>

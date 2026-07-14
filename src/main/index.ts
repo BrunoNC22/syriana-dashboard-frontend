@@ -11,6 +11,8 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { FileLoggerAdapter } from './logger/FileLoggerAdapter'
 import config from '../shared/config'
+import { openWindow, openModal } from './windowManager'
+import type { WindowOptions } from '../shared/windowOptions'
 
 let backendProcess: ChildProcess | null = null
 
@@ -416,6 +418,16 @@ app.whenReady().then(async () => {
   })
   ipcMain.on('log:error', (_, data) => {
     logger.error(data)
+  })
+
+  ipcMain.handle('open-window', (event, route: string, options: WindowOptions) => {
+    const parentWindow = BrowserWindow.fromWebContents(event.sender) ?? undefined
+    openWindow(route, options, parentWindow)
+  })
+
+  ipcMain.handle('open-modal', (event, route: string, options: WindowOptions) => {
+    const parentWindow = BrowserWindow.fromWebContents(event.sender) ?? undefined
+    openModal(route, options, parentWindow)
   })
 
   await ensureServerConfig()

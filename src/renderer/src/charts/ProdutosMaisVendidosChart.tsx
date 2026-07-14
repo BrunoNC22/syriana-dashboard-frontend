@@ -6,13 +6,9 @@ import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateB
 import { QueryChartLoadingState } from '@renderer/components/query-state/QueryLoadingState'
 
 type RemoteProdutoVendidoType = {
+  id: string
   nomeProduto: string
   totalVendido: number
-}
-
-type ChartDataType = {
-  x: string
-  y: number
 }
 
 export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
@@ -21,12 +17,10 @@ export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
 
   const query = useQuery({
     queryKey: ['produtos-mais-vendidos', year, month],
-    queryFn: async (): Promise<ChartDataType[]> => {
-      const remoteData = await httpClient.get<RemoteProdutoVendidoType[]>({
+    queryFn: (): Promise<RemoteProdutoVendidoType[]> =>
+      httpClient.get<RemoteProdutoVendidoType[]>({
         url: `/dashboard/produtos-mais-vendidos?ano=${year}&mes=${month}`
       })
-      return remoteData.map((value) => ({ x: value.nomeProduto, y: value.totalVendido }))
-    }
   })
 
   return (
@@ -38,7 +32,13 @@ export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
     >
       {(data) => {
         const chartData = {
-          datasets: [{ label: 'Quantidade de vendas', data, maxBarThickness: 25 }]
+          datasets: [
+            {
+              label: 'Quantidade de vendas',
+              data: data.map((value) => ({ x: value.nomeProduto, y: value.totalVendido })),
+              maxBarThickness: 25
+            }
+          ]
         }
         return (
           <div className="h-full">
@@ -52,7 +52,16 @@ export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
                 },
                 onClick: (_, activeElements) => {
                   if (!activeElements.length) return
-                  console.log(data[activeElements[0].index].x)
+                  const actualData = data[activeElements[0].index]
+                  window.electron.openWindow(`/product-details/${actualData.id}`, {
+                    width: 500,
+                    height: 700,
+                    resizable: false,
+                    maximizable: false,
+                    minimizable: true,
+                    title: actualData.nomeProduto,
+                    center: true
+                  })
                 },
                 scales: {
                   x: {
