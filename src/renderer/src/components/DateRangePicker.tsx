@@ -187,7 +187,7 @@ export default function DateRangePicker(): React.JSX.Element {
                     </button>
                   ))}
                 </div>
-                <div className="flex justify-center">
+                <div className="rdp-theme flex justify-center">
                   <DayPicker
                     mode="range"
                     locale={ptBR}
