@@ -72,11 +72,12 @@ export function FaturamentoChart(): React.JSX.Element {
                     type: 'time',
                     time: { tooltipFormat: "eeee, d 'de' MMMM", unit: 'day' },
                     adapters: { date: { locale: ptBR } },
-                    ticks: { stepSize: 3 }
+                    ticks: { source: 'auto', autoSkip: true, maxTicksLimit: 8 }
                   },
                   y: {
+                    beginAtZero: true,
                     ticks: {
-                      stepSize: 1500,
+                      maxTicksLimit: 6,
                       callback: (value) => formatter.format(value as number)
                     }
                   }

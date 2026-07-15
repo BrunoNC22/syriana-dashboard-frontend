@@ -70,8 +70,9 @@ export const ProdutosQueMaisFaturaramChart = (): React.JSX.Element => {
                     }
                   },
                   y: {
+                    beginAtZero: true,
                     ticks: {
-                      stepSize: 2000,
+                      maxTicksLimit: 6,
                       callback: (value) => formatter.format(value as number)
                     }
                   }

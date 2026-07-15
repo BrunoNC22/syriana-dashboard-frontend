@@ -78,7 +78,7 @@ export const ProdutosMaisVendidosChart = (): React.JSX.Element => {
                       }
                     }
                   },
-                  y: { ticks: { stepSize: 50 } }
+                  y: { beginAtZero: true, ticks: { maxTicksLimit: 6 } }
                 }
               }}
               data={chartData}
