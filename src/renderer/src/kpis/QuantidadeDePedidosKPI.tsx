@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { DashboardKPI } from './DashboardKPI'
+import { usePeriodComparison } from './usePeriodComparison'
 import { useMemo } from 'react'
 
 export const QuantidadeDePedidosKPI = (): React.JSX.Element => {
@@ -21,12 +22,13 @@ export const QuantidadeDePedidosKPI = (): React.JSX.Element => {
     return false
   }, [data])
 
+  const comparison = usePeriodComparison('/dashboard/quantidade-de-pedidos', data)
+
   return (
     <DashboardKPI
       title="Quantidade Total de Pedidos"
       mainIcon="shopping_cart"
-      info="+5.2% em relação ao mês anterior"
-      infoIcon="trending_up"
+      comparison={comparison}
       text={`${data}`}
       emptyMessage="Não há pedidos neste período"
       isEmpty={isEmpty}

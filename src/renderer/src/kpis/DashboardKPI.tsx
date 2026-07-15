@@ -1,3 +1,5 @@
+import { KPIComparison } from './usePeriodComparison'
+
 type DashboardKPIStateProps = {
   isLoading: boolean
   isError: boolean
@@ -6,15 +8,36 @@ type DashboardKPIStateProps = {
   isEmpty: boolean
   emptyMessage: string
   text: string
+  comparison?: KPIComparison | null
 }
 
 type DashboardKPIProps = {
   title: string
   text: string
   mainIcon: string
-  info: string
-  infoIcon: string
 } & DashboardKPIStateProps
+
+const percentFormatter = new Intl.NumberFormat('pt-BR', {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+  signDisplay: 'exceptZero'
+})
+
+/** Linha de variação percentual: verde quando sobe, vermelho quando cai. */
+const KPIComparisonLine = ({ comparison }: { comparison: KPIComparison }): React.JSX.Element => {
+  const isPositive = comparison.percent >= 0
+  const color = isPositive ? 'text-[#4CAF50]' : 'text-[#F44336]'
+  const icon = isPositive ? 'trending_up' : 'trending_down'
+
+  return (
+    <div className={`mt-stack-sm flex items-center gap-1 ${color}`}>
+      <span className="material-symbols-outlined text-[16px]">{icon}</span>
+      <span className="font-body-md text-xs">
+        {percentFormatter.format(comparison.percent)}% {comparison.label}
+      </span>
+    </div>
+  )
+}
 
 const KPIStateHandler = ({
   isLoading,
@@ -22,7 +45,8 @@ const KPIStateHandler = ({
   isError,
   onRetry,
   isEmpty,
-  emptyMessage
+  emptyMessage,
+  comparison
 }: DashboardKPIStateProps): React.JSX.Element => {
   if (isLoading) return <div className="h-10 w-48 rounded-lg shimmer-container" />
 
@@ -46,7 +70,12 @@ const KPIStateHandler = ({
   if (isEmpty)
     return <p className="font-body-md text-on-surface-variant opacity-70 text-sm">{emptyMessage}</p>
 
-  return <div className="font-data-display text-data-display text-primary font-bold">{text}</div>
+  return (
+    <div>
+      <div className="font-data-display text-data-display text-primary font-bold">{text}</div>
+      {comparison && <KPIComparisonLine comparison={comparison} />}
+    </div>
+  )
 }
 
 /**
@@ -62,10 +91,11 @@ export const DashboardKPI = ({
   isEmpty,
   isError,
   onRetry,
-  isRefetching
+  isRefetching,
+  comparison
 }: DashboardKPIProps): React.JSX.Element => {
   return (
-    <div className="bg-surface-container p-card-padding rounded-xl border border-outline-variant shadow-md relative overflow-hidden h-[122px]">
+    <div className="bg-surface-container p-card-padding rounded-xl border border-outline-variant shadow-md relative overflow-hidden h-[140px]">
       <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
       <div className="flex justify-between items-start mb-stack-sm">
         <span className="font-label-caps text-label-caps text-on-surface-variant">{title}</span>
@@ -79,6 +109,7 @@ export const DashboardKPI = ({
         isError={isError}
         onRetry={onRetry}
         isRefetching={isRefetching}
+        comparison={comparison}
       />
     </div>
   )

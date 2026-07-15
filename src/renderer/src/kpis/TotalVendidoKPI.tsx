@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { DashboardKPI } from './DashboardKPI'
+import { usePeriodComparison } from './usePeriodComparison'
 
 export const TotalVendidoKPI = (): React.JSX.Element => {
   const { startISO, endISO } = useApplicationDate()
@@ -37,12 +38,13 @@ export const TotalVendidoKPI = (): React.JSX.Element => {
     return formatter.format(data)
   }, [data, formatter])
 
+  const comparison = usePeriodComparison('/dashboard/total-vendido', data)
+
   return (
     <DashboardKPI
       title="Total vendido"
       mainIcon="payments"
-      info="+12.5% em relação ao mês anterior"
-      infoIcon="trending_up"
+      comparison={comparison}
       text={text}
       emptyMessage="Não há vendas neste período"
       isEmpty={isEmpty}
