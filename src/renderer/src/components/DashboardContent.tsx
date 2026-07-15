@@ -1,4 +1,5 @@
 import { JSX } from 'react'
+import { Link } from 'react-router-dom'
 import { DashboardChart } from '../charts/DashboardChart'
 import { FaturamentoChart } from '../charts/FaturamentoChart'
 import { ProdutosMaisVendidosChart } from '../charts/ProdutosMaisVendidosChart'
@@ -12,8 +13,17 @@ import { InsumosQueMaisCustaramChart } from '@renderer/charts/InsumosQueMaisCust
 export const DashboardContent = (): JSX.Element => {
   return (
     <section className="p-container-padding max-w-7xl mx-auto space-y-gutter">
-      <div className="flex justify-between items-center">
-        <h1 className="font-h1 text-primary text-h2 sm:text-h1">Syriana Dashboard</h1>
+      <div className="flex justify-between items-center gap-4 flex-wrap">
+        <div className="flex items-center gap-4">
+          <h1 className="font-h1 text-primary text-h2 sm:text-h1">Syriana Dashboard</h1>
+          <Link
+            to="/garcons"
+            className="px-3 py-1.5 border border-primary/20 bg-primary/5 text-primary text-sm font-bold rounded-lg hover:bg-primary/10 transition-colors flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-base">groups</span>
+            Garçons
+          </Link>
+        </div>
         <DateRangePicker />
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
