@@ -7,11 +7,13 @@ import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateB
 import { QueryChartLoadingState } from '@renderer/components/query-state/QueryLoadingState'
 
 type ProdutoFaturamentoType = {
+  id: string
   nome: string
   faturamento: number
 }
 
 type ChartDataType = {
+  id: string
   x: string
   y: number
 }
@@ -26,7 +28,7 @@ export const ProdutosQueMaisFaturaramChart = (): React.JSX.Element => {
       const remoteData = await httpClient.get<ProdutoFaturamentoType[]>({
         url: `/dashboard/faturamento-por-produto?dataInicio=${startISO}&dataFim=${endISO}`
       })
-      return remoteData.map((value) => ({ x: value.nome, y: value.faturamento }))
+      return remoteData.map((value) => ({ id: value.id, x: value.nome, y: value.faturamento }))
     }
   })
 
@@ -57,6 +59,28 @@ export const ProdutosQueMaisFaturaramChart = (): React.JSX.Element => {
           <div className="h-full">
             <Bar
               options={{
+                interaction: { mode: 'point' },
+                onHover: (event, chartElement) => {
+                  const target = event.native?.target as HTMLCanvasElement
+                  if (!target) return
+                  target.style.cursor = chartElement.length ? 'pointer' : 'default'
+                },
+                onClick: (_, activeElements) => {
+                  if (!activeElements.length) return
+                  const actualData = data[activeElements[0].index]
+                  window.electron.openWindow(
+                    `/product-details/${actualData.id}?dataInicio=${startISO}&dataFim=${endISO}`,
+                    {
+                      width: 640,
+                      height: 760,
+                      resizable: true,
+                      maximizable: true,
+                      minimizable: true,
+                      title: actualData.x,
+                      center: true
+                    }
+                  )
+                },
                 scales: {
                   x: {
                     ticks: {

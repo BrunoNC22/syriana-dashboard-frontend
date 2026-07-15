@@ -7,6 +7,7 @@ import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateB
 import { QueryChartLoadingState } from '@renderer/components/query-state/QueryLoadingState'
 
 type RemoteData = {
+  id: string
   nome: string
   siglaUnidadeDeMedida: string
   quantidade: number
@@ -52,7 +53,6 @@ export const InsumosQueMaisCustaramChart = (): React.JSX.Element => {
           (previous, current) => previous + current.valorTotal,
           0
         )
-        console.log(`Valor total de insumos do grafico ${somaDoValorTotal}`)
 
         if (somaDoValorTotal) return false
         else return true
@@ -76,6 +76,28 @@ export const InsumosQueMaisCustaramChart = (): React.JSX.Element => {
           <div className="h-full">
             <Bar
               options={{
+                interaction: { mode: 'point' },
+                onHover: (event, chartElement) => {
+                  const target = event.native?.target as HTMLCanvasElement
+                  if (!target) return
+                  target.style.cursor = chartElement.length ? 'pointer' : 'default'
+                },
+                onClick: (_, activeElements) => {
+                  if (!activeElements.length) return
+                  const actualData = remoteData[activeElements[0].index]
+                  window.electron.openWindow(
+                    `/insumo-details/${actualData.id}?dataInicio=${startISO}&dataFim=${endISO}`,
+                    {
+                      width: 640,
+                      height: 760,
+                      resizable: true,
+                      maximizable: true,
+                      minimizable: true,
+                      title: actualData.nome,
+                      center: true
+                    }
+                  )
+                },
                 plugins: {
                   tooltip: {
                     callbacks: {
