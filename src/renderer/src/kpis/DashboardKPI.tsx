@@ -9,6 +9,8 @@ type DashboardKPIStateProps = {
   emptyMessage: string
   text: string
   comparison?: KPIComparison | null
+  /** Se `true` (padrão), subir é bom (verde); se `false`, cair é bom (ex.: custo). */
+  higherIsBetter?: boolean
 }
 
 type DashboardKPIProps = {
@@ -23,11 +25,23 @@ const percentFormatter = new Intl.NumberFormat('pt-BR', {
   signDisplay: 'exceptZero'
 })
 
-/** Linha de variação percentual: verde quando sobe, vermelho quando cai. */
-const KPIComparisonLine = ({ comparison }: { comparison: KPIComparison }): React.JSX.Element => {
-  const isPositive = comparison.percent >= 0
-  const color = isPositive ? 'text-[#4CAF50]' : 'text-[#F44336]'
-  const icon = isPositive ? 'trending_up' : 'trending_down'
+/**
+ * Linha de variação percentual. A seta segue a direção real da variação
+ * (subiu → trending_up, caiu → trending_down). A cor segue se a variação é
+ * boa ou ruim: quando `higherIsBetter` (padrão), subir é verde e cair é
+ * vermelho; quando `false` (ex.: custo), a lógica é invertida.
+ */
+const KPIComparisonLine = ({
+  comparison,
+  higherIsBetter
+}: {
+  comparison: KPIComparison
+  higherIsBetter: boolean
+}): React.JSX.Element => {
+  const wentUp = comparison.percent >= 0
+  const isGood = higherIsBetter ? wentUp : !wentUp
+  const color = isGood ? 'text-[#4CAF50]' : 'text-[#F44336]'
+  const icon = wentUp ? 'trending_up' : 'trending_down'
 
   return (
     <div className={`mt-stack-sm flex items-center gap-1 ${color}`}>
@@ -46,7 +60,8 @@ const KPIStateHandler = ({
   onRetry,
   isEmpty,
   emptyMessage,
-  comparison
+  comparison,
+  higherIsBetter = true
 }: DashboardKPIStateProps): React.JSX.Element => {
   if (isLoading) return <div className="h-10 w-48 rounded-lg shimmer-container" />
 
@@ -73,7 +88,9 @@ const KPIStateHandler = ({
   return (
     <div>
       <div className="font-data-display text-data-display text-primary font-bold">{text}</div>
-      {comparison && <KPIComparisonLine comparison={comparison} />}
+      {comparison && (
+        <KPIComparisonLine comparison={comparison} higherIsBetter={higherIsBetter} />
+      )}
     </div>
   )
 }
@@ -92,7 +109,8 @@ export const DashboardKPI = ({
   isError,
   onRetry,
   isRefetching,
-  comparison
+  comparison,
+  higherIsBetter
 }: DashboardKPIProps): React.JSX.Element => {
   return (
     <div className="bg-surface-container p-card-padding rounded-xl border border-outline-variant shadow-md relative overflow-hidden h-[140px]">
@@ -110,6 +128,7 @@ export const DashboardKPI = ({
         onRetry={onRetry}
         isRefetching={isRefetching}
         comparison={comparison}
+        higherIsBetter={higherIsBetter}
       />
     </div>
   )

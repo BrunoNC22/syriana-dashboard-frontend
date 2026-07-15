@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Routes, Route } from 'react-router-dom'
 import { DashboardContent } from './components/DashboardContent'
+import { LoginPage } from './pages/LoginPage'
 import { ProductDetailsPage } from './pages/ProductDetailsPage'
 import { InsumoDetalhesPage } from './pages/InsumoDetalhesPage'
 import { GarconsPage } from './pages/GarconsPage'
@@ -23,6 +24,7 @@ function App(): React.JSX.Element {
       <ApplicationDateProvider>
         <HttpClientProvider>
           <Routes>
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<DashboardContent />} />
             <Route path="/garcons" element={<GarconsPage />} />
             <Route path="/garcons/:id" element={<GarcomDetalhesPage />} />

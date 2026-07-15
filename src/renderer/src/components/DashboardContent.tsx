@@ -7,6 +7,8 @@ import { ProdutosQueMaisFaturaramChart } from '../charts/ProdutosQueMaisFaturara
 import DateRangePicker from './DateRangePicker'
 import { TotalVendidoKPI } from '@renderer/kpis/TotalVendidoKPI'
 import { QuantidadeDePedidosKPI } from '@renderer/kpis/QuantidadeDePedidosKPI'
+import { LucroTotalKPI } from '@renderer/kpis/LucroTotalKPI'
+import { CustoTotalInsumosKPI } from '@renderer/kpis/CustoTotalInsumosKPI'
 import { FaturamentoMedioPorHoraPorDiaSemanaWidget } from '@renderer/widgets/FaturamentoMedioPorHoraPorDiaSemanaWidget'
 import { InsumosQueMaisCustaramChart } from '@renderer/charts/InsumosQueMaisCustaramChart'
 
@@ -26,9 +28,11 @@ export const DashboardContent = (): JSX.Element => {
         </div>
         <DateRangePicker />
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-gutter">
         <TotalVendidoKPI />
         <QuantidadeDePedidosKPI />
+        <LucroTotalKPI />
+        <CustoTotalInsumosKPI />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">

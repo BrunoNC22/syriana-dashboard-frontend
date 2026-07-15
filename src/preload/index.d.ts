@@ -8,7 +8,9 @@ declare global {
       openWindow: (route: string, options?: WindowOptions) => Promise<void>
       openModal: (route: string, options?: WindowOptions) => Promise<void>
     }
-    api: unknown
+    api: {
+      verifyAdminPassword: (password: string) => Promise<boolean>
+    }
     logger: LoggerOutputPort
   }
 }

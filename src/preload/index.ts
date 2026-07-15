@@ -4,7 +4,10 @@ import { LoggerOutputPort } from '../main/logger/LoggerOutputPort'
 import type { WindowOptions } from '../shared/windowOptions'
 
 // Custom APIs for renderer
-const api = {}
+const api = {
+  verifyAdminPassword: (password: string): Promise<boolean> =>
+    ipcRenderer.invoke('verify-admin-password', password)
+}
 const logger: LoggerOutputPort = {
   log: async (props) => {
     ipcRenderer.send(`log:${props.logLevel}`, props.info)

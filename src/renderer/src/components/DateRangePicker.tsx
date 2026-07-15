@@ -24,12 +24,33 @@ const MODES: { id: Mode; label: string }[] = [
 ]
 
 const MONTHS_LONG = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  'Janeiro',
+  'Fevereiro',
+  'Março',
+  'Abril',
+  'Maio',
+  'Junho',
+  'Julho',
+  'Agosto',
+  'Setembro',
+  'Outubro',
+  'Novembro',
+  'Dezembro'
 ]
 
 const MONTHS_SHORT = [
-  'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+  'Jan',
+  'Fev',
+  'Mar',
+  'Abr',
+  'Mai',
+  'Jun',
+  'Jul',
+  'Ago',
+  'Set',
+  'Out',
+  'Nov',
+  'Dez'
 ]
 
 const MIN_YEAR = 2017
@@ -41,6 +62,13 @@ function rangeKind(range: DateRange): Mode {
   if (isSameDay(start, startOfYear(start)) && isSameDay(end, endOfYear(start))) return 'year'
   if (isSameDay(start, startOfMonth(start)) && isSameDay(end, endOfMonth(start))) return 'month'
   return 'range'
+}
+
+/** Dia da semana capitalizado quando o intervalo é um único dia; senão `null`. */
+function singleDayWeekday(range: DateRange): string | null {
+  if (!isSameDay(range.start, range.end)) return null
+  const weekday = format(range.start, 'EEEE', { locale: ptBR })
+  return weekday.charAt(0).toUpperCase() + weekday.slice(1)
 }
 
 /** Rótulo legível do intervalo atual para o botão de disparo. */
@@ -66,8 +94,14 @@ const quickRanges: { label: string; build: () => DateRange }[] = [
       end: endOfWeek(new Date(), { weekStartsOn: WEEK_STARTS_ON })
     })
   },
-  { label: 'Este mês', build: () => ({ start: startOfMonth(new Date()), end: endOfMonth(new Date()) }) },
-  { label: 'Este ano', build: () => ({ start: startOfYear(new Date()), end: endOfYear(new Date()) }) }
+  {
+    label: 'Este mês',
+    build: () => ({ start: startOfMonth(new Date()), end: endOfMonth(new Date()) })
+  },
+  {
+    label: 'Este ano',
+    build: () => ({ start: startOfYear(new Date()), end: endOfYear(new Date()) })
+  }
 ]
 
 export default function DateRangePicker(): React.JSX.Element {
@@ -80,6 +114,8 @@ export default function DateRangePicker(): React.JSX.Element {
     to: range.end
   })
   const [monthNavYear, setMonthNavYear] = useState(range.start.getFullYear())
+
+  const weekday = singleDayWeekday(range)
 
   const containerRef = useRef<HTMLDivElement>(null)
 
@@ -131,123 +167,159 @@ export default function DateRangePicker(): React.JSX.Element {
   }
 
   return (
-    <div ref={containerRef} className="relative inline-block">
-      <button
-        type="button"
-        onClick={() => (isOpen ? setIsOpen(false) : openPopover())}
-        className="
+    <div className="flex items-center gap-2">
+      {weekday && (
+        <span className="flex items-center gap-1 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 font-label-caps text-label-caps text-primary">
+          <span className="material-symbols-outlined text-[16px]">event</span>
+          {weekday}
+        </span>
+      )}
+      <div ref={containerRef} className="relative inline-block">
+        <button
+          type="button"
+          onClick={() => (isOpen ? setIsOpen(false) : openPopover())}
+          className="
           flex items-center gap-2 rounded-full
           border border-outline-variant bg-surface-container-high
           px-4 py-2 text-on-surface transition-all duration-200
           hover:border-primary/40 hover:bg-surface-container-highest
           focus:outline-none focus-visible:border-primary/40
         "
-      >
-        <span className="material-symbols-outlined text-[18px] text-primary">date_range</span>
-        <span className="font-body-md">{describeRange(range)}</span>
-        <span
-          className={`material-symbols-outlined text-[18px] text-on-surface-variant transition-transform duration-200 ${
-            isOpen ? 'rotate-180' : ''
-          }`}
         >
-          keyboard_arrow_down
-        </span>
-      </button>
+          <span className="material-symbols-outlined text-[18px] text-primary">date_range</span>
+          <span className="font-body-md">{describeRange(range)}</span>
+          <span
+            className={`material-symbols-outlined text-[18px] text-on-surface-variant transition-transform duration-200 ${
+              isOpen ? 'rotate-180' : ''
+            }`}
+          >
+            keyboard_arrow_down
+          </span>
+        </button>
 
-      {isOpen && (
-        <div
-          className="
+        {isOpen && (
+          <div
+            className="
             absolute right-0 z-50 mt-2 w-[340px] overflow-hidden rounded-xl
             border border-outline-variant bg-surface-container shadow-2xl
           "
-        >
-          {/* Alternador de modo */}
-          <div className="flex gap-1 border-b border-outline-variant p-2">
-            {MODES.map((m) => (
-              <button
-                key={m.id}
-                type="button"
-                onClick={() => setMode(m.id)}
-                className={`flex-1 rounded-lg px-3 py-1.5 font-label-caps text-label-caps transition-all duration-200 ${
-                  mode === m.id
-                    ? 'bg-primary text-on-primary'
-                    : 'text-on-surface-variant hover:bg-surface-container-high'
-                }`}
-              >
-                {m.label}
-              </button>
-            ))}
-          </div>
+          >
+            {/* Alternador de modo */}
+            <div className="flex gap-1 border-b border-outline-variant p-2">
+              {MODES.map((m) => (
+                <button
+                  key={m.id}
+                  type="button"
+                  onClick={() => setMode(m.id)}
+                  className={`flex-1 rounded-lg px-3 py-1.5 font-label-caps text-label-caps transition-all duration-200 ${
+                    mode === m.id
+                      ? 'bg-primary text-on-primary'
+                      : 'text-on-surface-variant hover:bg-surface-container-high'
+                  }`}
+                >
+                  {m.label}
+                </button>
+              ))}
+            </div>
 
-          <div className="p-3">
-            {mode === 'range' && (
-              <div className="flex flex-col gap-3">
-                <div className="grid grid-cols-2 gap-2">
-                  {quickRanges.map((q) => (
-                    <button
-                      key={q.label}
-                      type="button"
-                      onClick={() => commit(q.build())}
-                      className="
+            <div className="p-3">
+              {mode === 'range' && (
+                <div className="flex flex-col gap-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    {quickRanges.map((q) => (
+                      <button
+                        key={q.label}
+                        type="button"
+                        onClick={() => commit(q.build())}
+                        className="
                         rounded-lg border border-outline-variant bg-surface-container-high
                         px-3 py-1.5 font-body-md text-sm text-on-surface transition-all duration-200
                         hover:border-primary/40 hover:bg-surface-container-highest
                       "
-                    >
-                      {q.label}
-                    </button>
-                  ))}
+                      >
+                        {q.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className="rdp-theme flex justify-center">
+                    <DayPicker
+                      mode="range"
+                      locale={ptBR}
+                      selected={tempRange}
+                      onSelect={(_selected, triggerDate) => handleDayClick(triggerDate)}
+                      numberOfMonths={1}
+                      defaultMonth={range.start}
+                      startMonth={new Date(MIN_YEAR, 0)}
+                      endMonth={new Date(maxYear, 11)}
+                    />
+                  </div>
                 </div>
-                <div className="rdp-theme flex justify-center">
-                  <DayPicker
-                    mode="range"
-                    locale={ptBR}
-                    selected={tempRange}
-                    onSelect={(_selected, triggerDate) => handleDayClick(triggerDate)}
-                    numberOfMonths={1}
-                    defaultMonth={range.start}
-                    startMonth={new Date(MIN_YEAR, 0)}
-                    endMonth={new Date(maxYear, 11)}
-                  />
-                </div>
-              </div>
-            )}
+              )}
 
-            {mode === 'month' && (
-              <div className="flex flex-col gap-3">
-                <div className="flex items-center justify-between">
-                  <button
-                    type="button"
-                    onClick={() => setMonthNavYear((y) => Math.max(MIN_YEAR, y - 1))}
-                    disabled={monthNavYear <= MIN_YEAR}
-                    className="rounded-lg p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-30"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">chevron_left</span>
-                  </button>
-                  <span className="font-body-md text-on-surface">{monthNavYear}</span>
-                  <button
-                    type="button"
-                    onClick={() => setMonthNavYear((y) => Math.min(maxYear, y + 1))}
-                    disabled={monthNavYear >= maxYear}
-                    className="rounded-lg p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-30"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">chevron_right</span>
-                  </button>
+              {mode === 'month' && (
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <button
+                      type="button"
+                      onClick={() => setMonthNavYear((y) => Math.max(MIN_YEAR, y - 1))}
+                      disabled={monthNavYear <= MIN_YEAR}
+                      className="rounded-lg p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-30"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+                    </button>
+                    <span className="font-body-md text-on-surface">{monthNavYear}</span>
+                    <button
+                      type="button"
+                      onClick={() => setMonthNavYear((y) => Math.min(maxYear, y + 1))}
+                      disabled={monthNavYear >= maxYear}
+                      className="rounded-lg p-1.5 text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-30"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    {MONTHS_SHORT.map((label, index) => {
+                      const isSelected =
+                        rangeKind(range) === 'month' &&
+                        range.start.getFullYear() === monthNavYear &&
+                        range.start.getMonth() === index
+                      return (
+                        <button
+                          key={label}
+                          type="button"
+                          onClick={() =>
+                            commit({
+                              start: startOfMonth(new Date(monthNavYear, index, 1)),
+                              end: endOfMonth(new Date(monthNavYear, index, 1))
+                            })
+                          }
+                          className={`rounded-lg border px-3 py-2.5 font-body-md text-sm transition-all duration-200 ${
+                            isSelected
+                              ? 'border-primary bg-primary text-on-primary'
+                              : 'border-transparent bg-surface-container-high text-on-surface hover:border-primary/20 hover:bg-surface-container-highest'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-                <div className="grid grid-cols-3 gap-2">
-                  {MONTHS_SHORT.map((label, index) => {
+              )}
+
+              {mode === 'year' && (
+                <div className="grid max-h-[280px] grid-cols-3 gap-2 overflow-y-auto">
+                  {years.map((year) => {
                     const isSelected =
-                      rangeKind(range) === 'month' &&
-                      range.start.getFullYear() === monthNavYear &&
-                      range.start.getMonth() === index
+                      rangeKind(range) === 'year' && range.start.getFullYear() === year
                     return (
                       <button
-                        key={label}
+                        key={year}
                         type="button"
                         onClick={() =>
                           commit({
-                            start: startOfMonth(new Date(monthNavYear, index, 1)),
-                            end: endOfMonth(new Date(monthNavYear, index, 1))
+                            start: startOfYear(new Date(year, 0, 1)),
+                            end: endOfYear(new Date(year, 0, 1))
                           })
                         }
                         className={`rounded-lg border px-3 py-2.5 font-body-md text-sm transition-all duration-200 ${
@@ -256,44 +328,16 @@ export default function DateRangePicker(): React.JSX.Element {
                             : 'border-transparent bg-surface-container-high text-on-surface hover:border-primary/20 hover:bg-surface-container-highest'
                         }`}
                       >
-                        {label}
+                        {year}
                       </button>
                     )
                   })}
                 </div>
-              </div>
-            )}
-
-            {mode === 'year' && (
-              <div className="grid max-h-[280px] grid-cols-3 gap-2 overflow-y-auto">
-                {years.map((year) => {
-                  const isSelected =
-                    rangeKind(range) === 'year' && range.start.getFullYear() === year
-                  return (
-                    <button
-                      key={year}
-                      type="button"
-                      onClick={() =>
-                        commit({
-                          start: startOfYear(new Date(year, 0, 1)),
-                          end: endOfYear(new Date(year, 0, 1))
-                        })
-                      }
-                      className={`rounded-lg border px-3 py-2.5 font-body-md text-sm transition-all duration-200 ${
-                        isSelected
-                          ? 'border-primary bg-primary text-on-primary'
-                          : 'border-transparent bg-surface-container-high text-on-surface hover:border-primary/20 hover:bg-surface-container-highest'
-                      }`}
-                    >
-                      {year}
-                    </button>
-                  )
-                })}
-              </div>
-            )}
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }

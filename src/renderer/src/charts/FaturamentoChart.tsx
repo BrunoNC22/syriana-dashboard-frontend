@@ -7,6 +7,7 @@ import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateBoundary'
 import { QueryChartLoadingState } from '@renderer/components/query-state/QueryLoadingState'
 import { ChartDataType } from '@renderer/types/ChartDataType'
+import { colors } from '@renderer/colors'
 
 type RemoteChartDataType = {
   dia: string
@@ -16,6 +17,11 @@ type RemoteChartDataType = {
 export function FaturamentoChart(): React.JSX.Element {
   const { startISO, endISO } = useApplicationDate()
   const { httpClient } = useHttpClient()
+
+  // Um único dia selecionado: a linha não tem o que ligar (fica vazia), então
+  // exibimos o ponto (pointStyle visível) para que o faturamento apareça no
+  // tooltip ao passar o mouse.
+  const isSingleDay = startISO === endISO
 
   const query = useQuery({
     queryKey: ['faturamento-por-dia', startISO, endISO],
@@ -42,16 +48,23 @@ export function FaturamentoChart(): React.JSX.Element {
     []
   )
 
+  const tooltipFormatter = useMemo(
+    () =>
+      new Intl.NumberFormat('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+        maximumFractionDigits: 2
+      }),
+    []
+  )
+
   return (
     <QueryStateBoundary
       query={query}
       isEmpty={(data) => {
         if (!data) return true
         const somaDoValorTotal = data.reduce((previous, current) => previous + current.y, 0)
-        console.log(`Valor total de faturamento do grafico ${somaDoValorTotal}`)
-
-        if (somaDoValorTotal) return false
-        else return true
+        return !somaDoValorTotal
       }}
       emptyMessage="Não existem dados de faturamento neste periodo"
       loadingPlaceholder={<QueryChartLoadingState height="300px" />}
@@ -59,14 +72,38 @@ export function FaturamentoChart(): React.JSX.Element {
       {(data) => {
         const chartData = {
           labels: [],
-          datasets: [{ label: 'Faturamento em R$', data }]
+          datasets: [
+            {
+              label: 'Faturamento em R$',
+              data,
+              // Com um único dia a linha fica vazia (só 1 ponto); tornamos o ponto
+              // visível e dourado para que o faturamento apareça no tooltip ao passar o mouse.
+              ...(isSingleDay
+                ? {
+                    pointStyle: 'circle',
+                    pointRadius: 5,
+                    pointHoverRadius: 7,
+                    pointBackgroundColor: colors.primary,
+                    pointBorderColor: colors.primaryLight,
+                    pointBorderWidth: 2
+                  }
+                : {})
+            }
+          ]
         }
         return (
           <div className="h-full">
             <Line
               options={{
                 responsive: true,
-                plugins: { legend: { display: false } },
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      label: (context) => tooltipFormatter.format(context.parsed.y ?? 0)
+                    }
+                  }
+                },
                 scales: {
                   x: {
                     type: 'time',

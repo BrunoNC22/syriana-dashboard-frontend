@@ -4,7 +4,7 @@ import { join } from 'path'
 
 import { spawn, ChildProcess } from 'child_process'
 
-import { existsSync, writeFileSync } from 'fs'
+import { existsSync, writeFileSync, readFileSync } from 'fs'
 
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 
@@ -17,6 +17,8 @@ import type { WindowOptions } from '../shared/windowOptions'
 let backendProcess: ChildProcess | null = null
 
 const CONFIG_FILE_NAME = 'server-config.json'
+/** Senha usada quando o server-config.json não define `adminPassword` (configs legadas). */
+const DEFAULT_ADMIN_PASSWORD = 'admin'
 const logger = new FileLoggerAdapter(join(process.cwd(), 'log.txt'))
 
 function getConfigPath(): string {
@@ -28,6 +30,27 @@ function getConfigPath(): string {
 
 function configExists(): boolean {
   return existsSync(getConfigPath())
+}
+
+function readServerConfig(): Record<string, unknown> | null {
+  try {
+    if (!configExists()) return null
+    return JSON.parse(readFileSync(getConfigPath(), 'utf-8'))
+  } catch (err) {
+    logger.error(`Erro ao ler o arquivo de configuração: ${String(err)}`)
+    return null
+  }
+}
+
+/** Compara a senha informada com `adminPassword` do server-config.json. */
+function verifyAdminPassword(password: string): boolean {
+  const config = readServerConfig()
+  const expected =
+    typeof config?.adminPassword === 'string' && config.adminPassword.length > 0
+      ? config.adminPassword
+      : DEFAULT_ADMIN_PASSWORD
+
+  return password === expected
 }
 
 function startBackend(): Promise<void> {
@@ -126,15 +149,19 @@ function createMainWindow(): void {
     }
   })
 
+  // A janela principal abre na tela de login; após autenticar o renderer
+  // navega para o dashboard (`/`).
+  const initialRoute = '/login'
+
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     logger.info(
       `Tela principal sera carregada a partir da url ${process.env['ELECTRON_RENDERER_URL']}`
     )
-    mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
+    mainWindow.loadURL(`${process.env['ELECTRON_RENDERER_URL']}#${initialRoute}`)
   } else {
     const mainWindowFilePath = join(__dirname, '../renderer/index.html')
     logger.info(`Tela principal sera carregada a partir do arquivo ${mainWindowFilePath}`)
-    mainWindow.loadFile(mainWindowFilePath)
+    mainWindow.loadFile(mainWindowFilePath, { hash: initialRoute })
   }
 }
 
@@ -263,6 +290,17 @@ function createConfigWindow(): BrowserWindow {
         </div>
       </div>
 
+      <div class="field">
+        <label>
+          Senha de administrador (login do aplicativo)
+        </label>
+        <input
+          id="adminPassword"
+          type="password"
+          value="admin"
+        />
+      </div>
+
       <button
         class="save-button"
         id="saveButton"
@@ -334,6 +372,11 @@ function createConfigWindow(): BrowserWindow {
               databaseFile:
                 document.getElementById(
                   'databaseFile'
+                ).value,
+
+              adminPassword:
+                document.getElementById(
+                  'adminPassword'
                 ).value
             }
 
@@ -418,6 +461,12 @@ app.whenReady().then(async () => {
   })
   ipcMain.on('log:error', (_, data) => {
     logger.error(data)
+  })
+
+  ipcMain.handle('verify-admin-password', (_, password: string) => {
+    const isValid = verifyAdminPassword(password)
+    logger.info(`Verificação de senha de administrador: ${isValid ? 'sucesso' : 'falha'}`)
+    return isValid
   })
 
   ipcMain.handle('open-window', (event, route: string, options: WindowOptions) => {
