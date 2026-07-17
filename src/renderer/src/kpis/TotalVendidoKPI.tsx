@@ -38,13 +38,13 @@ export const TotalVendidoKPI = (): React.JSX.Element => {
     return formatter.format(data)
   }, [data, formatter])
 
-  const comparison = usePeriodComparison('/dashboard/total-vendido', data)
+  const comparisons = usePeriodComparison('/dashboard/total-vendido', data)
 
   return (
     <DashboardKPI
       title="Total vendido"
       mainIcon="payments"
-      comparison={comparison}
+      comparisons={comparisons}
       text={text}
       emptyMessage="Não há vendas neste período"
       isEmpty={isEmpty}

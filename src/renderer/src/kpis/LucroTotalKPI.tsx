@@ -38,13 +38,13 @@ export const LucroTotalKPI = (): React.JSX.Element => {
     return formatter.format(data)
   }, [data, formatter])
 
-  const comparison = usePeriodComparison('/dashboard/lucro-total', data)
+  const comparisons = usePeriodComparison('/dashboard/lucro-total', data)
 
   return (
     <DashboardKPI
       title="Lucro total"
       mainIcon="trending_up"
-      comparison={comparison}
+      comparisons={comparisons}
       text={text}
       emptyMessage="Não há lucro neste período"
       isEmpty={isEmpty}

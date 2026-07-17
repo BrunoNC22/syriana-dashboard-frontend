@@ -8,7 +8,8 @@ type DashboardKPIStateProps = {
   isEmpty: boolean
   emptyMessage: string
   text: string
-  comparison?: KPIComparison | null
+  /** Linhas de comparação (até 2: modo selecionado + "vs ano anterior"). */
+  comparisons?: KPIComparison[]
   /** Se `true` (padrão), subir é bom (verde); se `false`, cair é bom (ex.: custo). */
   higherIsBetter?: boolean
 }
@@ -48,6 +49,7 @@ const KPIComparisonLine = ({
       <span className="material-symbols-outlined text-[16px]">{icon}</span>
       <span className="font-body-md text-xs">
         {percentFormatter.format(comparison.percent)}% {comparison.label}
+        {comparison.perDay ? ' (média/dia)' : ''}
       </span>
     </div>
   )
@@ -60,7 +62,7 @@ const KPIStateHandler = ({
   onRetry,
   isEmpty,
   emptyMessage,
-  comparison,
+  comparisons,
   higherIsBetter = true
 }: DashboardKPIStateProps): React.JSX.Element => {
   if (isLoading) return <div className="h-10 w-48 rounded-lg shimmer-container" />
@@ -88,9 +90,13 @@ const KPIStateHandler = ({
   return (
     <div>
       <div className="font-data-display text-data-display text-primary font-bold">{text}</div>
-      {comparison && (
-        <KPIComparisonLine comparison={comparison} higherIsBetter={higherIsBetter} />
-      )}
+      {comparisons?.map((comparison) => (
+        <KPIComparisonLine
+          key={comparison.label}
+          comparison={comparison}
+          higherIsBetter={higherIsBetter}
+        />
+      ))}
     </div>
   )
 }
@@ -109,11 +115,11 @@ export const DashboardKPI = ({
   isError,
   onRetry,
   isRefetching,
-  comparison,
+  comparisons,
   higherIsBetter
 }: DashboardKPIProps): React.JSX.Element => {
   return (
-    <div className="bg-surface-container p-card-padding rounded-xl border border-outline-variant shadow-md relative overflow-hidden h-[140px]">
+    <div className="bg-surface-container p-card-padding rounded-xl border border-outline-variant shadow-md relative overflow-hidden min-h-[160px]">
       <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
       <div className="flex justify-between items-start mb-stack-sm">
         <span className="font-label-caps text-label-caps text-on-surface-variant">{title}</span>
@@ -127,7 +133,7 @@ export const DashboardKPI = ({
         isError={isError}
         onRetry={onRetry}
         isRefetching={isRefetching}
-        comparison={comparison}
+        comparisons={comparisons}
         higherIsBetter={higherIsBetter}
       />
     </div>

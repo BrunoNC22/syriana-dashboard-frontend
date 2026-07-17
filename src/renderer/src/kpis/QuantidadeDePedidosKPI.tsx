@@ -22,13 +22,13 @@ export const QuantidadeDePedidosKPI = (): React.JSX.Element => {
     return false
   }, [data])
 
-  const comparison = usePeriodComparison('/dashboard/quantidade-de-pedidos', data)
+  const comparisons = usePeriodComparison('/dashboard/quantidade-de-pedidos', data)
 
   return (
     <DashboardKPI
       title="Quantidade Total de Pedidos"
       mainIcon="shopping_cart"
-      comparison={comparison}
+      comparisons={comparisons}
       text={`${data}`}
       emptyMessage="Não há pedidos neste período"
       isEmpty={isEmpty}

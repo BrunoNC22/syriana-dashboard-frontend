@@ -38,13 +38,13 @@ export const CustoTotalInsumosKPI = (): React.JSX.Element => {
     return formatter.format(data)
   }, [data, formatter])
 
-  const comparison = usePeriodComparison('/dashboard/total-gasto-ingredientes', data)
+  const comparisons = usePeriodComparison('/dashboard/total-gasto-ingredientes', data)
 
   return (
     <DashboardKPI
       title="Custo total dos insumos"
       mainIcon="inventory_2"
-      comparison={comparison}
+      comparisons={comparisons}
       higherIsBetter={false}
       text={text}
       emptyMessage="Não há custo de insumos neste período"
