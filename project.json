@@ -4,11 +4,7 @@
     "serve": {
       "executor": "nx:run-commands",
       "options": {
-        "commands": [
-          "wait-on http://127.0.0.1:8080/dashboard/total-vendido?ano=2026",
-          "npm run dev"
-        ],
-        "parallel": false,
+        "command": "npm run dev",
         "cwd": "apps/frontend"
       }
     },
@@ -30,10 +26,10 @@
     "installer": {
       "executor": "nx:run-commands",
       "dependsOn": [
-        "backend:build"
+        "build"
       ],
       "options": {
-        "command": "npm run build:win",
+        "command": "node -e \"console.log('Instalador em apps/frontend/dist/ (gerado pelo target build; use npm run smoke para validar)')\"",
         "cwd": "apps/frontend"
       }
     }

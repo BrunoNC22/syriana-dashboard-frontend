@@ -15,6 +15,8 @@ import { openWindow, openModal } from './windowManager'
 import type { WindowOptions } from '../shared/windowOptions'
 
 let backendProcess: ChildProcess | null = null
+/** Código de saída do backend quando ele encerra antes da hora (null = ainda rodando). */
+let backendExitCode: number | null = null
 
 const CONFIG_FILE_NAME = 'server-config.json'
 /** Senha usada quando o server-config.json não define `adminPassword` (configs legadas). */
@@ -69,7 +71,17 @@ function startBackend(): Promise<void> {
 
     backendProcess = spawn(backendPath, [], {
       windowsHide: true,
-      stdio: 'ignore'
+      // stdout/stderr são capturados para o log.txt — é a única forma de saber
+      // por que o backend morreu (ex.: erro de parsing do server-config.json).
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+
+    backendProcess.stdout?.on('data', (chunk: Buffer) => {
+      logger.info(`[backend] ${chunk.toString().trimEnd()}`)
+    })
+
+    backendProcess.stderr?.on('data', (chunk: Buffer) => {
+      logger.error(`[backend] ${chunk.toString().trimEnd()}`)
     })
 
     backendProcess.on('spawn', () => {
@@ -83,7 +95,14 @@ function startBackend(): Promise<void> {
     })
 
     backendProcess.on('exit', (code) => {
-      logger.info(`Backend encerrado com código ${code}`)
+      backendExitCode = code
+      if (code === 0) {
+        logger.info('Backend encerrado com código 0')
+      } else {
+        logger.error(
+          `Backend encerrado inesperadamente com código ${code} — verifique as linhas [backend] acima para a causa`
+        )
+      }
     })
   })
 }
@@ -97,6 +116,13 @@ async function waitForBackend(): Promise<void> {
   }
 
   for (let i = 0; i < 30; i++) {
+    // Se o processo já morreu, não adianta continuar tentando contato.
+    if (backendExitCode !== null) {
+      const message = `Backend encerrou antes de responder (código ${backendExitCode}). Verifique o log.txt para a causa.`
+      await logger.error(message)
+      throw new Error(message)
+    }
+
     try {
       await logger.info(`Tentativa n ${i}...`)
       const response = await fetch(
@@ -481,9 +507,21 @@ app.whenReady().then(async () => {
 
   await ensureServerConfig()
 
-  await startBackend()
+  try {
+    await startBackend()
 
-  await waitForBackend()
+    await waitForBackend()
+  } catch (err) {
+    // Sem isso o app fecha silenciosamente — o usuário precisa ver que algo falhou.
+    const message = err instanceof Error ? err.message : String(err)
+    await logger.error(`Falha na inicialização do backend: ${message}`)
+    dialog.showErrorBox(
+      'Erro ao iniciar o Syriana Dashboard',
+      `O serviço interno de dados não iniciou.\n\n${message}\n\nDetalhes técnicos em:\n${join(process.cwd(), 'log.txt')}`
+    )
+    app.quit()
+    return
+  }
 
   createMainWindow()
 
