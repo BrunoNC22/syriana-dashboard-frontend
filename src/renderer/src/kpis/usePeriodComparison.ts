@@ -27,18 +27,20 @@ export function usePeriodComparison(
   const { httpClient } = useHttpClient()
 
   const comparison = useMemo(() => getComparisonPeriod(range), [range])
-  const previousStartISO = format(comparison.previous.start, 'yyyy-MM-dd')
-  const previousEndISO = format(comparison.previous.end, 'yyyy-MM-dd')
+  const previousStartISO = comparison ? format(comparison.previous.start, 'yyyy-MM-dd') : ''
+  const previousEndISO = comparison ? format(comparison.previous.end, 'yyyy-MM-dd') : ''
 
   const { data: previousValue } = useQuery({
     queryKey: [endpoint, 'comparacao', previousStartISO, previousEndISO],
     queryFn: () =>
       httpClient.get<number>({
         url: `${endpoint}?dataInicio=${previousStartISO}&dataFim=${previousEndISO}`
-      })
+      }),
+    enabled: comparison !== null
   })
 
   return useMemo(() => {
+    if (!comparison) return null
     if (currentValue === undefined || previousValue === undefined || previousValue === null) {
       return null
     }
@@ -46,5 +48,5 @@ export function usePeriodComparison(
 
     const percent = ((currentValue - previousValue) / previousValue) * 100
     return { percent, label: comparison.label }
-  }, [currentValue, previousValue, comparison.label])
+  }, [currentValue, previousValue, comparison])
 }
