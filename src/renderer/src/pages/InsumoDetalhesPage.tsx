@@ -249,6 +249,26 @@ export function InsumoDetalhesPage(): React.JSX.Element {
                             </tr>
                           ))}
                         </tbody>
+                        <tfoot>
+                          <tr className="bg-surface-container-high border-t-2 border-outline">
+                            <td className="px-stack-md py-stack-sm" />
+                            <td className="px-stack-md py-stack-sm font-label-caps text-label-caps text-on-surface-variant">
+                              Total do período (todos os produtos)
+                            </td>
+                            <td className="px-stack-md py-stack-sm text-right font-data-display font-bold text-on-surface whitespace-nowrap">
+                              {data.quantidadeTotal.toLocaleString('pt-BR', {
+                                maximumFractionDigits: 3
+                              })}
+                              {sigla && <span className="opacity-60 font-normal"> {sigla}</span>}
+                            </td>
+                            <td className="px-stack-md py-stack-sm text-right font-data-display font-bold text-primary whitespace-nowrap">
+                              {brl.format(data.custoTotal)}
+                            </td>
+                            <td className="px-stack-md py-stack-sm text-right text-on-surface-variant opacity-70 whitespace-nowrap">
+                              100%
+                            </td>
+                          </tr>
+                        </tfoot>
                       </table>
                     </div>
                   )}

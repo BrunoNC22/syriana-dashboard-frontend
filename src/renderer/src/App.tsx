@@ -6,6 +6,7 @@ import { ProductDetailsPage } from './pages/ProductDetailsPage'
 import { InsumoDetalhesPage } from './pages/InsumoDetalhesPage'
 import { GarconsPage } from './pages/GarconsPage'
 import { GarcomDetalhesPage } from './pages/GarcomDetalhesPage'
+import { RankingPage } from './features/ranking/RankingPage'
 import { ApplicationDateProvider } from './contexts/ApplicationDateProvider'
 import { HttpClientProvider } from './contexts/httpClient/HttpClientProvider'
 
@@ -30,6 +31,7 @@ function App(): React.JSX.Element {
             <Route path="/garcons/:id" element={<GarcomDetalhesPage />} />
             <Route path="/product-details/:productId" element={<ProductDetailsPage />} />
             <Route path="/insumo-details/:insumoId" element={<InsumoDetalhesPage />} />
+            <Route path="/ranking/:metrica" element={<RankingPage />} />
           </Routes>
         </HttpClientProvider>
       </ApplicationDateProvider>

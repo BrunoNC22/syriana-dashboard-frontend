@@ -11,6 +11,7 @@ import { LucroTotalKPI } from '@renderer/kpis/LucroTotalKPI'
 import { CustoTotalInsumosKPI } from '@renderer/kpis/CustoTotalInsumosKPI'
 import { FaturamentoMedioPorHoraPorDiaSemanaWidget } from '@renderer/widgets/FaturamentoMedioPorHoraPorDiaSemanaWidget'
 import { InsumosQueMaisCustaramChart } from '@renderer/charts/InsumosQueMaisCustaramChart'
+import { ProductSearch } from '@renderer/features/busca/ProductSearch'
 
 export const DashboardContent = (): JSX.Element => {
   return (
@@ -26,7 +27,10 @@ export const DashboardContent = (): JSX.Element => {
             Garçons
           </Link>
         </div>
-        <DateRangePicker />
+        <div className="flex items-center gap-3">
+          <ProductSearch />
+          <DateRangePicker />
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-gutter">
         <TotalVendidoKPI />
@@ -37,7 +41,7 @@ export const DashboardContent = (): JSX.Element => {
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
         <DashboardChart
-          title="Top 10 produtos mais vendidos"
+          title="Produtos mais vendidos"
           ChartElement={ProdutosMaisVendidosChart}
           className="lg:col-span-6"
         />
@@ -51,7 +55,7 @@ export const DashboardContent = (): JSX.Element => {
         <FaturamentoMedioPorHoraPorDiaSemanaWidget />
 
         <DashboardChart
-          title="Top 10 produtos que mais faturaram"
+          title="Produtos que mais faturaram"
           ChartElement={ProdutosQueMaisFaturaramChart}
           className="lg:col-span-6"
         />
