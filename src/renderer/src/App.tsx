@@ -8,6 +8,7 @@ import { GarconsPage } from './pages/GarconsPage'
 import { GarcomDetalhesPage } from './pages/GarcomDetalhesPage'
 import { RankingPage } from './features/ranking/RankingPage'
 import { ApplicationDateProvider } from './contexts/ApplicationDateProvider'
+import { ComparisonProvider } from './contexts/ComparisonProvider'
 import { HttpClientProvider } from './contexts/httpClient/HttpClientProvider'
 
 const queryClient = new QueryClient({
@@ -23,17 +24,19 @@ function App(): React.JSX.Element {
   return (
     <QueryClientProvider client={queryClient}>
       <ApplicationDateProvider>
-        <HttpClientProvider>
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<DashboardContent />} />
-            <Route path="/garcons" element={<GarconsPage />} />
-            <Route path="/garcons/:id" element={<GarcomDetalhesPage />} />
-            <Route path="/product-details/:productId" element={<ProductDetailsPage />} />
-            <Route path="/insumo-details/:insumoId" element={<InsumoDetalhesPage />} />
-            <Route path="/ranking/:metrica" element={<RankingPage />} />
-          </Routes>
-        </HttpClientProvider>
+        <ComparisonProvider>
+          <HttpClientProvider>
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/" element={<DashboardContent />} />
+              <Route path="/garcons" element={<GarconsPage />} />
+              <Route path="/garcons/:id" element={<GarcomDetalhesPage />} />
+              <Route path="/product-details/:productId" element={<ProductDetailsPage />} />
+              <Route path="/insumo-details/:insumoId" element={<InsumoDetalhesPage />} />
+              <Route path="/ranking/:metrica" element={<RankingPage />} />
+            </Routes>
+          </HttpClientProvider>
+        </ComparisonProvider>
       </ApplicationDateProvider>
     </QueryClientProvider>
   )
