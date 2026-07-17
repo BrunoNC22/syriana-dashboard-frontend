@@ -26,6 +26,13 @@ export const DashboardContent = (): JSX.Element => {
             <span className="material-symbols-outlined text-base">groups</span>
             Garçons
           </Link>
+          <Link
+            to="/saude-cardapio"
+            className="px-3 py-1.5 border border-primary/20 bg-primary/5 text-primary text-sm font-bold rounded-lg hover:bg-primary/10 transition-colors flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-base">health_and_safety</span>
+            Saúde do cardápio
+          </Link>
         </div>
         <div className="flex items-center gap-3">
           <ProductSearch />

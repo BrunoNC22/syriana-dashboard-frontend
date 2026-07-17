@@ -7,6 +7,7 @@ import { InsumoDetalhesPage } from './pages/InsumoDetalhesPage'
 import { GarconsPage } from './pages/GarconsPage'
 import { GarcomDetalhesPage } from './pages/GarcomDetalhesPage'
 import { RankingPage } from './features/ranking/RankingPage'
+import { SaudeCardapioPage } from './features/saude-cardapio/SaudeCardapioPage'
 import { ApplicationDateProvider } from './contexts/ApplicationDateProvider'
 import { ComparisonProvider } from './contexts/ComparisonProvider'
 import { HttpClientProvider } from './contexts/httpClient/HttpClientProvider'
@@ -30,6 +31,7 @@ function App(): React.JSX.Element {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/" element={<DashboardContent />} />
               <Route path="/garcons" element={<GarconsPage />} />
+              <Route path="/saude-cardapio" element={<SaudeCardapioPage />} />
               <Route path="/garcons/:id" element={<GarcomDetalhesPage />} />
               <Route path="/product-details/:productId" element={<ProductDetailsPage />} />
               <Route path="/insumo-details/:insumoId" element={<InsumoDetalhesPage />} />
