@@ -2,16 +2,27 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Line } from 'react-chartjs-2'
 import { ptBR } from 'date-fns/locale'
+import { format } from 'date-fns'
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateBoundary'
 import { QueryChartLoadingState } from '@renderer/components/query-state/QueryLoadingState'
 import { ChartDataType } from '@renderer/types/ChartDataType'
-import { colors } from '@renderer/colors'
+import { colors, chartColors } from '@renderer/colors'
+import { useForecast } from '@renderer/features/previsao/useForecast'
 
 type RemoteChartDataType = {
   dia: string
   faturamento: number
+}
+
+const BANDA_MAX = 'Faixa de confiança (máx)'
+const BANDA_MIN = 'Faixa de confiança (mín)'
+const PREVISAO = 'Previsão'
+
+const parseISODate = (iso: string): Date => {
+  const [y, m, d] = iso.split('-').map(Number)
+  return new Date(y, m - 1, d)
 }
 
 export function FaturamentoChart(): React.JSX.Element {
@@ -22,6 +33,12 @@ export function FaturamentoChart(): React.JSX.Element {
   // exibimos o ponto (pointStyle visível) para que o faturamento apareça no
   // tooltip ao passar o mouse.
   const isSingleDay = startISO === endISO
+
+  // A previsão é uma extensão do "hoje" em diante; só faz sentido sobrepô-la
+  // quando o período selecionado alcança o presente (senão a projeção futura
+  // apareceria desconectada de um intervalo passado).
+  const todayISO = format(new Date(), 'yyyy-MM-dd')
+  const showForecast = endISO >= todayISO
 
   const query = useQuery({
     queryKey: ['faturamento-por-dia', startISO, endISO],
@@ -35,6 +52,8 @@ export function FaturamentoChart(): React.JSX.Element {
       })
     }
   })
+
+  const forecastQuery = useForecast('faturamento', '30d', showForecast)
 
   const formatter = useMemo(
     () =>
@@ -70,6 +89,79 @@ export function FaturamentoChart(): React.JSX.Element {
       loadingPlaceholder={<QueryChartLoadingState height="300px" />}
     >
       {(data) => {
+        const forecast = showForecast ? forecastQuery.data : undefined
+
+        // Constrói as séries de previsão. Preserva o mapa data→nome do feriado
+        // para o tooltip; vazio quando não há previsão a exibir.
+        const feriadoNomePorTempo = new Map<number, string>()
+
+        const forecastDatasets =
+          forecast && forecast.pontos.length > 0
+            ? (() => {
+                const linha = forecast.pontos.map((p) => ({ x: parseISODate(p.data), y: p.valor }))
+                const superior = forecast.pontos.map((p) => ({
+                  x: parseISODate(p.data),
+                  y: p.limiteSuperior
+                }))
+                const inferior = forecast.pontos.map((p) => ({
+                  x: parseISODate(p.data),
+                  y: p.limiteInferior
+                }))
+                const feriadoFlags = forecast.pontos.map((p) => p.feriado)
+
+                forecast.feriadosNoHorizonte.forEach((f) =>
+                  feriadoNomePorTempo.set(parseISODate(f.data).getTime(), f.nome)
+                )
+
+                // Conecta a projeção ao último ponto real (linha tracejada parte
+                // dele; a banda de confiança começa com largura zero nesse ponto).
+                const ultimo = data[data.length - 1]
+                if (ultimo) {
+                  linha.unshift({ x: ultimo.x, y: ultimo.y })
+                  superior.unshift({ x: ultimo.x, y: ultimo.y })
+                  inferior.unshift({ x: ultimo.x, y: ultimo.y })
+                  feriadoFlags.unshift(false)
+                }
+
+                return [
+                  {
+                    label: BANDA_MAX,
+                    data: superior,
+                    borderColor: 'transparent',
+                    backgroundColor: `${colors.primary}22`,
+                    pointRadius: 0,
+                    fill: '+1',
+                    tension: 0.3
+                  },
+                  {
+                    label: BANDA_MIN,
+                    data: inferior,
+                    borderColor: 'transparent',
+                    backgroundColor: 'transparent',
+                    pointRadius: 0,
+                    fill: false,
+                    tension: 0.3
+                  },
+                  {
+                    label: PREVISAO,
+                    data: linha,
+                    borderColor: colors.primaryLight,
+                    borderDash: [6, 4],
+                    backgroundColor: 'transparent',
+                    fill: false,
+                    tension: 0.3,
+                    pointStyle: 'rectRot',
+                    pointBackgroundColor: chartColors.warning,
+                    pointBorderColor: colors.primaryLight,
+                    pointRadius: (ctx: { dataIndex: number }) =>
+                      feriadoFlags[ctx.dataIndex] ? 5 : 0,
+                    pointHoverRadius: (ctx: { dataIndex: number }) =>
+                      feriadoFlags[ctx.dataIndex] ? 7 : 3
+                  }
+                ]
+              })()
+            : []
+
         const chartData = {
           labels: [],
           datasets: [
@@ -88,7 +180,8 @@ export function FaturamentoChart(): React.JSX.Element {
                     pointBorderWidth: 2
                   }
                 : {})
-            }
+            },
+            ...forecastDatasets
           ]
         }
         return (
@@ -99,8 +192,18 @@ export function FaturamentoChart(): React.JSX.Element {
                 plugins: {
                   legend: { display: false },
                   tooltip: {
+                    // Esconde as linhas das bandas de confiança do tooltip (ruído).
+                    filter: (item) =>
+                      item.dataset.label !== BANDA_MAX && item.dataset.label !== BANDA_MIN,
                     callbacks: {
-                      label: (context) => tooltipFormatter.format(context.parsed.y ?? 0)
+                      label: (context) => {
+                        const valor = tooltipFormatter.format(context.parsed.y ?? 0)
+                        if (context.dataset.label === PREVISAO) {
+                          const nome = feriadoNomePorTempo.get(context.parsed.x as number)
+                          return `Previsão: ${valor}${nome ? ` · ${nome}` : ''}`
+                        }
+                        return valor
+                      }
                     }
                   }
                 },

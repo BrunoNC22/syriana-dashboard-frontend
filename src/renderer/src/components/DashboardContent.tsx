@@ -9,6 +9,7 @@ import { TotalVendidoKPI } from '@renderer/kpis/TotalVendidoKPI'
 import { QuantidadeDePedidosKPI } from '@renderer/kpis/QuantidadeDePedidosKPI'
 import { LucroTotalKPI } from '@renderer/kpis/LucroTotalKPI'
 import { CustoTotalInsumosKPI } from '@renderer/kpis/CustoTotalInsumosKPI'
+import { FaturamentoPrevistoKPI } from '@renderer/kpis/FaturamentoPrevistoKPI'
 import { FaturamentoMedioPorHoraPorDiaSemanaWidget } from '@renderer/widgets/FaturamentoMedioPorHoraPorDiaSemanaWidget'
 import { InsumosQueMaisCustaramChart } from '@renderer/charts/InsumosQueMaisCustaramChart'
 import { ProductSearch } from '@renderer/features/busca/ProductSearch'
@@ -44,6 +45,7 @@ export const DashboardContent = (): JSX.Element => {
         <QuantidadeDePedidosKPI />
         <LucroTotalKPI />
         <CustoTotalInsumosKPI />
+        <FaturamentoPrevistoKPI />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">

@@ -8,6 +8,8 @@ type DashboardKPIStateProps = {
   isEmpty: boolean
   emptyMessage: string
   text: string
+  /** Texto secundário discreto abaixo do valor (ex.: método/erro da previsão). */
+  subtitle?: string
   /** Linhas de comparação (até 2: modo selecionado + "vs ano anterior"). */
   comparisons?: KPIComparison[]
   /** Se `true` (padrão), subir é bom (verde); se `false`, cair é bom (ex.: custo). */
@@ -62,6 +64,7 @@ const KPIStateHandler = ({
   onRetry,
   isEmpty,
   emptyMessage,
+  subtitle,
   comparisons,
   higherIsBetter = true
 }: DashboardKPIStateProps): React.JSX.Element => {
@@ -90,6 +93,11 @@ const KPIStateHandler = ({
   return (
     <div>
       <div className="font-data-display text-data-display text-primary font-bold">{text}</div>
+      {subtitle && (
+        <div className="mt-stack-sm font-body-md text-on-surface-variant opacity-70 text-xs">
+          {subtitle}
+        </div>
+      )}
       {comparisons?.map((comparison) => (
         <KPIComparisonLine
           key={comparison.label}
@@ -115,6 +123,7 @@ export const DashboardKPI = ({
   isError,
   onRetry,
   isRefetching,
+  subtitle,
   comparisons,
   higherIsBetter
 }: DashboardKPIProps): React.JSX.Element => {
@@ -133,6 +142,7 @@ export const DashboardKPI = ({
         isError={isError}
         onRetry={onRetry}
         isRefetching={isRefetching}
+        subtitle={subtitle}
         comparisons={comparisons}
         higherIsBetter={higherIsBetter}
       />
