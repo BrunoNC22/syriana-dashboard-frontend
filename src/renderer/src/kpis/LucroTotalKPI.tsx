@@ -4,6 +4,7 @@ import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { DashboardKPI } from './DashboardKPI'
 import { usePeriodComparison } from './usePeriodComparison'
+import { serieDaMetrica, useSeriesDiarias } from './useSeriesDiarias'
 
 export const LucroTotalKPI = (): React.JSX.Element => {
   const { startISO, endISO } = useApplicationDate()
@@ -39,12 +40,14 @@ export const LucroTotalKPI = (): React.JSX.Element => {
   }, [data, formatter])
 
   const comparisons = usePeriodComparison('/dashboard/lucro-total', data)
+  const series = useSeriesDiarias()
 
   return (
     <DashboardKPI
       title="Lucro total"
       mainIcon="trending_up"
       comparisons={comparisons}
+      sparkline={serieDaMetrica(series.data, 'lucro')}
       text={text}
       emptyMessage="Não há lucro neste período"
       isEmpty={isEmpty}

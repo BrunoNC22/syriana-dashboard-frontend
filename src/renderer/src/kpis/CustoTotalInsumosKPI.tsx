@@ -4,6 +4,7 @@ import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { DashboardKPI } from './DashboardKPI'
 import { usePeriodComparison } from './usePeriodComparison'
+import { serieDaMetrica, useSeriesDiarias } from './useSeriesDiarias'
 
 export const CustoTotalInsumosKPI = (): React.JSX.Element => {
   const { startISO, endISO } = useApplicationDate()
@@ -39,6 +40,7 @@ export const CustoTotalInsumosKPI = (): React.JSX.Element => {
   }, [data, formatter])
 
   const comparisons = usePeriodComparison('/dashboard/total-gasto-ingredientes', data)
+  const series = useSeriesDiarias()
 
   return (
     <DashboardKPI
@@ -46,6 +48,7 @@ export const CustoTotalInsumosKPI = (): React.JSX.Element => {
       mainIcon="inventory_2"
       comparisons={comparisons}
       higherIsBetter={false}
+      sparkline={serieDaMetrica(series.data, 'custo')}
       text={text}
       emptyMessage="Não há custo de insumos neste período"
       isEmpty={isEmpty}

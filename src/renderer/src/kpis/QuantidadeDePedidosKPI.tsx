@@ -3,6 +3,7 @@ import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { DashboardKPI } from './DashboardKPI'
 import { usePeriodComparison } from './usePeriodComparison'
+import { serieDaMetrica, useSeriesDiarias } from './useSeriesDiarias'
 import { useMemo } from 'react'
 
 export const QuantidadeDePedidosKPI = (): React.JSX.Element => {
@@ -23,12 +24,14 @@ export const QuantidadeDePedidosKPI = (): React.JSX.Element => {
   }, [data])
 
   const comparisons = usePeriodComparison('/dashboard/quantidade-de-pedidos', data)
+  const series = useSeriesDiarias()
 
   return (
     <DashboardKPI
       title="Quantidade Total de Pedidos"
       mainIcon="shopping_cart"
       comparisons={comparisons}
+      sparkline={serieDaMetrica(series.data, 'pedidos')}
       text={`${data}`}
       emptyMessage="Não há pedidos neste período"
       isEmpty={isEmpty}

@@ -1,4 +1,6 @@
 import { KPIComparison } from './usePeriodComparison'
+import { Sparkline } from './Sparkline'
+import { trendDirection } from './trend'
 
 type DashboardKPIStateProps = {
   isLoading: boolean
@@ -14,6 +16,47 @@ type DashboardKPIStateProps = {
   comparisons?: KPIComparison[]
   /** Se `true` (padrão), subir é bom (verde); se `false`, cair é bom (ex.: custo). */
   higherIsBetter?: boolean
+  /** Série da métrica nos últimos ~30 dias para a sparkline + seta de tendência. */
+  sparkline?: number[]
+}
+
+const TREND_NEUTRAL = '#9e9e9e'
+const TREND_GOOD = '#4CAF50'
+const TREND_BAD = '#F44336'
+
+/**
+ * Sparkline dos últimos ~30 dias + seta de direção. A janela é fixa (tendência
+ * recente), independente do período do KPI. A cor segue se a tendência é boa:
+ * quando `higherIsBetter`, subir é verde; para custo (`false`), subir é
+ * vermelho. Tendência estável fica neutra.
+ */
+const KPITrend = ({
+  values,
+  higherIsBetter
+}: {
+  values: number[]
+  higherIsBetter: boolean
+}): React.JSX.Element | null => {
+  if (values.length < 2) return null
+
+  const direction = trendDirection(values)
+  const isGood =
+    direction === 'flat' ? null : higherIsBetter ? direction === 'up' : direction === 'down'
+  const color = isGood === null ? TREND_NEUTRAL : isGood ? TREND_GOOD : TREND_BAD
+  const icon =
+    direction === 'up' ? 'trending_up' : direction === 'down' ? 'trending_down' : 'trending_flat'
+
+  return (
+    <div
+      className="mt-stack-sm flex items-center gap-2"
+      style={{ color }}
+      title="Tendência dos últimos 30 dias"
+    >
+      <Sparkline values={values} color={color} />
+      <span className="material-symbols-outlined text-[16px]">{icon}</span>
+      <span className="font-body-md text-on-surface-variant opacity-60 text-[10px]">30d</span>
+    </div>
+  )
 }
 
 type DashboardKPIProps = {
@@ -66,7 +109,8 @@ const KPIStateHandler = ({
   emptyMessage,
   subtitle,
   comparisons,
-  higherIsBetter = true
+  higherIsBetter = true,
+  sparkline
 }: DashboardKPIStateProps): React.JSX.Element => {
   if (isLoading) return <div className="h-10 w-48 rounded-lg shimmer-container" />
 
@@ -105,6 +149,7 @@ const KPIStateHandler = ({
           higherIsBetter={higherIsBetter}
         />
       ))}
+      {sparkline && <KPITrend values={sparkline} higherIsBetter={higherIsBetter} />}
     </div>
   )
 }
@@ -125,7 +170,8 @@ export const DashboardKPI = ({
   isRefetching,
   subtitle,
   comparisons,
-  higherIsBetter
+  higherIsBetter,
+  sparkline
 }: DashboardKPIProps): React.JSX.Element => {
   return (
     <div className="bg-surface-container p-card-padding rounded-xl border border-outline-variant shadow-md relative overflow-hidden min-h-[160px]">
@@ -145,6 +191,7 @@ export const DashboardKPI = ({
         subtitle={subtitle}
         comparisons={comparisons}
         higherIsBetter={higherIsBetter}
+        sparkline={sparkline}
       />
     </div>
   )

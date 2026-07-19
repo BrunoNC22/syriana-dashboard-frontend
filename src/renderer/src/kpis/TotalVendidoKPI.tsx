@@ -4,6 +4,7 @@ import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { DashboardKPI } from './DashboardKPI'
 import { usePeriodComparison } from './usePeriodComparison'
+import { serieDaMetrica, useSeriesDiarias } from './useSeriesDiarias'
 
 export const TotalVendidoKPI = (): React.JSX.Element => {
   const { startISO, endISO } = useApplicationDate()
@@ -39,12 +40,14 @@ export const TotalVendidoKPI = (): React.JSX.Element => {
   }, [data, formatter])
 
   const comparisons = usePeriodComparison('/dashboard/total-vendido', data)
+  const series = useSeriesDiarias()
 
   return (
     <DashboardKPI
       title="Total vendido"
       mainIcon="payments"
       comparisons={comparisons}
+      sparkline={serieDaMetrica(series.data, 'faturamento')}
       text={text}
       emptyMessage="Não há vendas neste período"
       isEmpty={isEmpty}
