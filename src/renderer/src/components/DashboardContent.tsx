@@ -34,6 +34,24 @@ export const DashboardContent = (): JSX.Element => {
             <span className="material-symbols-outlined text-base">health_and_safety</span>
             Saúde do cardápio
           </Link>
+          <button
+            type="button"
+            onClick={() =>
+              window.electron.openWindow('/relatorio-compras', {
+                width: 1100,
+                height: 820,
+                resizable: true,
+                maximizable: true,
+                minimizable: true,
+                title: 'Relatório de compras',
+                center: true
+              })
+            }
+            className="px-3 py-1.5 border border-primary/20 bg-primary/5 text-primary text-sm font-bold rounded-lg hover:bg-primary/10 transition-colors flex items-center gap-1"
+          >
+            <span className="material-symbols-outlined text-base">shopping_cart</span>
+            Relatório de compras
+          </button>
         </div>
         <div className="flex items-center gap-3">
           <ProductSearch />

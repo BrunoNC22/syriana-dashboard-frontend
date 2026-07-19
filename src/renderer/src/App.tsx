@@ -8,6 +8,7 @@ import { GarconsPage } from './pages/GarconsPage'
 import { GarcomDetalhesPage } from './pages/GarcomDetalhesPage'
 import { RankingPage } from './features/ranking/RankingPage'
 import { SaudeCardapioPage } from './features/saude-cardapio/SaudeCardapioPage'
+import { RelatorioComprasPage } from './features/relatorio-compras/RelatorioComprasPage'
 import { ApplicationDateProvider } from './contexts/ApplicationDateProvider'
 import { ComparisonProvider } from './contexts/ComparisonProvider'
 import { HttpClientProvider } from './contexts/httpClient/HttpClientProvider'
@@ -36,6 +37,7 @@ function App(): React.JSX.Element {
               <Route path="/product-details/:productId" element={<ProductDetailsPage />} />
               <Route path="/insumo-details/:insumoId" element={<InsumoDetalhesPage />} />
               <Route path="/ranking/:metrica" element={<RankingPage />} />
+              <Route path="/relatorio-compras" element={<RelatorioComprasPage />} />
             </Routes>
           </HttpClientProvider>
         </ComparisonProvider>
