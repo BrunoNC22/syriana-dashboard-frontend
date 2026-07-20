@@ -1,15 +1,28 @@
 import { JSX } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { hoje, isDataSimulada } from '@renderer/appClock'
+import { VARIANTES } from '@renderer/features/dashboard-variantes/variantes'
 
 type ItemDeNavegacao = {
   rota: string
   icone: string
   rotulo: string
+  /** Linha secundária sob o rótulo (usada pelas variantes em avaliação). */
+  resumo?: string
 }
 
-const ITENS: ItemDeNavegacao[] = [
-  { rota: '/', icone: 'dashboard', rotulo: 'Dashboard' },
+/**
+ * As variantes de dashboard em comparação. Temporário: quando uma for
+ * escolhida, esta lista volta a ser um único item "Dashboard".
+ */
+const DASHBOARDS: ItemDeNavegacao[] = VARIANTES.map((v, i) => ({
+  rota: v.rota,
+  icone: i === 0 ? 'dashboard' : 'dashboard_customize',
+  rotulo: v.rotulo,
+  resumo: v.resumo
+}))
+
+const SECOES: ItemDeNavegacao[] = [
   { rota: '/garcons', icone: 'groups', rotulo: 'Garçons' },
   { rota: '/saude-cardapio', icone: 'health_and_safety', rotulo: 'Saúde do cardápio' },
   { rota: '/relatorio-compras', icone: 'shopping_cart', rotulo: 'Relatório de compras' }
@@ -34,6 +47,32 @@ const DataSimuladaChip = (): JSX.Element | null => {
   )
 }
 
+const ItemDaSidebar = ({ item }: { item: ItemDeNavegacao }): JSX.Element => (
+  <li>
+    <NavLink
+      to={item.rota}
+      // `end` só no dashboard: sem isso a rota "/" casaria com todas.
+      end={item.rota === '/'}
+      title={item.resumo ? `${item.rotulo} — ${item.resumo}` : item.rotulo}
+      className={({ isActive }) =>
+        `px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm font-bold transition-colors justify-center lg:justify-start ${
+          isActive
+            ? 'bg-primary/10 text-primary border border-primary/30'
+            : 'text-on-surface-variant opacity-70 hover:opacity-100 hover:bg-primary/5 border border-transparent'
+        }`
+      }
+    >
+      <span className="material-symbols-outlined text-xl shrink-0">{item.icone}</span>
+      <span className="hidden lg:block min-w-0">
+        <span className="block truncate">{item.rotulo}</span>
+        {item.resumo && (
+          <span className="block truncate text-[11px] font-normal opacity-60">{item.resumo}</span>
+        )}
+      </span>
+    </NavLink>
+  </li>
+)
+
 /**
  * Chrome da janela principal: sidebar de navegação + área de conteúdo.
  *
@@ -57,28 +96,24 @@ export const AppLayout = (): JSX.Element => {
           <span className="hidden lg:inline font-h1 text-primary text-h3 truncate">Syriana</span>
         </div>
 
-        <ul className="flex-1 px-2 space-y-1">
-          {ITENS.map((item) => (
-            <li key={item.rota}>
-              <NavLink
-                to={item.rota}
-                // `end` só no dashboard: sem isso a rota "/" casaria com todas.
-                end={item.rota === '/'}
-                title={item.rotulo}
-                className={({ isActive }) =>
-                  `px-3 py-2.5 rounded-lg flex items-center gap-3 text-sm font-bold transition-colors justify-center lg:justify-start ${
-                    isActive
-                      ? 'bg-primary/10 text-primary border border-primary/30'
-                      : 'text-on-surface-variant opacity-70 hover:opacity-100 hover:bg-primary/5 border border-transparent'
-                  }`
-                }
-              >
-                <span className="material-symbols-outlined text-xl shrink-0">{item.icone}</span>
-                <span className="hidden lg:inline truncate">{item.rotulo}</span>
-              </NavLink>
-            </li>
-          ))}
-        </ul>
+        <div className="flex-1 overflow-y-auto px-2 space-y-4">
+          <div>
+            <p className="hidden lg:block px-3 pb-1 font-label-caps text-label-caps text-on-surface-variant opacity-50">
+              Dashboards em avaliação
+            </p>
+            <ul className="space-y-1">
+              {DASHBOARDS.map((item) => (
+                <ItemDaSidebar key={item.rota} item={item} />
+              ))}
+            </ul>
+          </div>
+
+          <ul className="space-y-1 lg:pt-2 lg:border-t lg:border-outline-variant">
+            {SECOES.map((item) => (
+              <ItemDaSidebar key={item.rota} item={item} />
+            ))}
+          </ul>
+        </div>
 
         <DataSimuladaChip />
       </nav>
