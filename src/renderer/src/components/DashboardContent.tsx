@@ -13,6 +13,25 @@ import { FaturamentoPrevistoKPI } from '@renderer/kpis/FaturamentoPrevistoKPI'
 import { FaturamentoMedioPorHoraPorDiaSemanaWidget } from '@renderer/widgets/FaturamentoMedioPorHoraPorDiaSemanaWidget'
 import { InsumosQueMaisCustaramChart } from '@renderer/charts/InsumosQueMaisCustaramChart'
 import { ProductSearch } from '@renderer/features/busca/ProductSearch'
+import { hoje, isDataSimulada } from '@renderer/appClock'
+
+/**
+ * Aviso de que a aplicação está com data simulada (só em desenvolvimento).
+ * Sem ele, um dashboard "parado" num mês antigo vira bug fantasma.
+ */
+const DataSimuladaChip = (): JSX.Element | null => {
+  if (!isDataSimulada()) return null
+
+  return (
+    <span
+      className="px-3 py-1.5 border border-amber-400/30 bg-amber-400/10 text-amber-400 text-sm font-bold rounded-lg flex items-center gap-1.5"
+      title="Definido por 'dataAtualSimulada' no server-config.json. Não vale no app empacotado."
+    >
+      <span className="material-symbols-outlined text-base">schedule</span>
+      Data simulada: {hoje().toLocaleDateString('pt-BR')}
+    </span>
+  )
+}
 
 export const DashboardContent = (): JSX.Element => {
   return (
@@ -54,6 +73,7 @@ export const DashboardContent = (): JSX.Element => {
           </button>
         </div>
         <div className="flex items-center gap-3">
+          <DataSimuladaChip />
           <ProductSearch />
           <DateRangePicker />
         </div>

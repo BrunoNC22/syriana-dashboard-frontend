@@ -16,6 +16,7 @@ import 'react-day-picker/style.css'
 import { DateRange, useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useComparison } from '@renderer/contexts/ComparisonContext'
 import { ComparisonMode, getComparisonPeriod } from '@renderer/kpis/periodComparison'
+import { hoje } from '@renderer/appClock'
 
 type Mode = 'range' | 'month' | 'year'
 
@@ -109,22 +110,23 @@ function describeRangeShort(range: DateRange): string {
   }
 }
 
+// `build` é lazy de propósito: resolve hoje() no clique, já com o relógio pronto.
 const quickRanges: { label: string; build: () => DateRange }[] = [
-  { label: 'Hoje', build: () => ({ start: startOfDay(new Date()), end: startOfDay(new Date()) }) },
+  { label: 'Hoje', build: () => ({ start: startOfDay(hoje()), end: startOfDay(hoje()) }) },
   {
     label: 'Esta semana',
     build: () => ({
-      start: startOfWeek(new Date(), { weekStartsOn: WEEK_STARTS_ON }),
-      end: endOfWeek(new Date(), { weekStartsOn: WEEK_STARTS_ON })
+      start: startOfWeek(hoje(), { weekStartsOn: WEEK_STARTS_ON }),
+      end: endOfWeek(hoje(), { weekStartsOn: WEEK_STARTS_ON })
     })
   },
   {
     label: 'Este mês',
-    build: () => ({ start: startOfMonth(new Date()), end: endOfMonth(new Date()) })
+    build: () => ({ start: startOfMonth(hoje()), end: endOfMonth(hoje()) })
   },
   {
     label: 'Este ano',
-    build: () => ({ start: startOfYear(new Date()), end: endOfYear(new Date()) })
+    build: () => ({ start: startOfYear(hoje()), end: endOfYear(hoje()) })
   }
 ]
 
@@ -159,7 +161,7 @@ export default function DateRangePicker(): React.JSX.Element {
 
   const containerRef = useRef<HTMLDivElement>(null)
 
-  const maxYear = new Date().getFullYear()
+  const maxYear = hoje().getFullYear()
   const years = useMemo(
     () => Array.from({ length: maxYear - MIN_YEAR + 1 }, (_, i) => maxYear - i),
     [maxYear]

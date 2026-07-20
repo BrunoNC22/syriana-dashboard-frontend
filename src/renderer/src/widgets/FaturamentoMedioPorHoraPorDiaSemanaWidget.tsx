@@ -1,10 +1,11 @@
 import { DashboardChart } from '@renderer/charts/DashboardChart'
 import { FaturamentoMedioPorHoraPorDiaSemanaChart } from '@renderer/charts/FaturamentoMedioPorHoraPorDiaSemanaChart'
 import WeekDayPicker from '@renderer/components/WeekDayPicker'
+import { hoje } from '@renderer/appClock'
 import { useState } from 'react'
 
 export const FaturamentoMedioPorHoraPorDiaSemanaWidget = (): React.JSX.Element => {
-  const [weekDay, setWeekDay] = useState(new Date().getDay())
+  const [weekDay, setWeekDay] = useState(hoje().getDay())
 
   return (
     <DashboardChart

@@ -12,6 +12,7 @@ import {
   subYears
 } from 'date-fns'
 import { DateRange } from '@renderer/contexts/ApplicationDateContext'
+import { hoje } from '@renderer/appClock'
 
 /**
  * Modos explícitos de comparação entre períodos.
@@ -82,7 +83,7 @@ export function getComparisonPeriod(
 ): PeriodComparison | null {
   const start = startOfDay(range.start)
   const end = startOfDay(range.end)
-  const today = startOfDay(new Date())
+  const today = startOfDay(hoje())
   const normalized: DateRange = { start, end }
 
   switch (mode) {

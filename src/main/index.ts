@@ -135,6 +135,39 @@ async function exportarCsv(
   )
 }
 
+/**
+ * Data que o renderer deve considerar como "hoje" (campo `dataAtualSimulada`
+ * do server-config.json), ou `null` para o relógio real.
+ *
+ * Existe porque o banco de desenvolvimento tem dados só até certa data — sem
+ * isso, tudo que depende do presente (previsão, sparklines, "sem vendas há 30
+ * dias") olha para dias sem movimento. O backend lê o mesmo campo.
+ *
+ * **Nunca vale em produção**: quando o app está empacotado o campo é ignorado
+ * mesmo se estiver no arquivo.
+ */
+function getDataAtualSimulada(): string | null {
+  if (app.isPackaged) return null
+
+  const valor = readServerConfig()?.dataAtualSimulada
+
+  if (typeof valor !== 'string' || valor.trim() === '') return null
+
+  const iso = valor.trim()
+
+  // Formato + data real (rejeita 2026-02-31, que o Date aceitaria deslizando).
+  const parsed = /^\d{4}-\d{2}-\d{2}$/.test(iso) ? new Date(`${iso}T00:00:00`) : null
+  if (!parsed || Number.isNaN(parsed.getTime())) {
+    logger.warning(
+      `'dataAtualSimulada' inválida no ${CONFIG_FILE_NAME}: "${iso}". Usando o relógio do sistema.`
+    )
+    return null
+  }
+
+  logger.warning(`Relógio SIMULADO: a aplicação vai considerar que hoje é ${iso}.`)
+  return iso
+}
+
 function startBackend(): Promise<void> {
   return new Promise((resolve, reject) => {
     logger.info('Tentando iniciar backend')
@@ -574,6 +607,8 @@ app.whenReady().then(async () => {
     logger.info(`Verificação de senha de administrador: ${isValid ? 'sucesso' : 'falha'}`)
     return isValid
   })
+
+  ipcMain.handle('get-data-atual', () => getDataAtualSimulada())
 
   ipcMain.handle('export-pdf', exportarPdf)
   ipcMain.handle('export-csv', exportarCsv)

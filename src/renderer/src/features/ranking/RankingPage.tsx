@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { endOfMonth, format, parseISO, startOfMonth } from 'date-fns'
+import { hoje } from '@renderer/appClock'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateBoundary'
 import { DataTable, DataTableColumn } from '@renderer/components/DataTable'
@@ -35,9 +36,8 @@ const TITULOS: Record<RankingMetrica, string> = {
 
 function usePeriodo(): { dataInicio: string; dataFim: string; label: string } {
   const [searchParams] = useSearchParams()
-  const dataInicio =
-    searchParams.get('dataInicio') ?? format(startOfMonth(new Date()), 'yyyy-MM-dd')
-  const dataFim = searchParams.get('dataFim') ?? format(endOfMonth(new Date()), 'yyyy-MM-dd')
+  const dataInicio = searchParams.get('dataInicio') ?? format(startOfMonth(hoje()), 'yyyy-MM-dd')
+  const dataFim = searchParams.get('dataFim') ?? format(endOfMonth(hoje()), 'yyyy-MM-dd')
   const label = `${format(parseISO(dataInicio), 'dd/MM/yyyy')} – ${format(parseISO(dataFim), 'dd/MM/yyyy')}`
   return { dataInicio, dataFim, label }
 }

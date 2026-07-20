@@ -1,11 +1,12 @@
 import { PropsWithChildren, useMemo, useState } from 'react'
 import { endOfMonth, format, startOfMonth } from 'date-fns'
 import { ApplicationDateContext, DateRange } from './ApplicationDateContext'
+import { hoje } from '@renderer/appClock'
 
 export const ApplicationDateProvider = ({ children }: PropsWithChildren): React.JSX.Element => {
   const [range, setRange] = useState<DateRange>(() => ({
-    start: startOfMonth(new Date()),
-    end: endOfMonth(new Date())
+    start: startOfMonth(hoje()),
+    end: endOfMonth(hoje())
   }))
 
   const startISO = useMemo(() => format(range.start, 'yyyy-MM-dd'), [range.start])

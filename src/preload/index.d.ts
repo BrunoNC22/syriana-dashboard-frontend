@@ -11,6 +11,7 @@ declare global {
     }
     api: {
       verifyAdminPassword: (password: string) => Promise<boolean>
+      getDataAtual: () => Promise<string | null>
       exportarPdf: (nomeSugerido: string) => Promise<ExportResult>
       exportarCsv: (conteudo: string, nomeSugerido: string) => Promise<ExportResult>
     }

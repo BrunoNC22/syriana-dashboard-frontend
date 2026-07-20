@@ -2,7 +2,6 @@ import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Line } from 'react-chartjs-2'
 import { ptBR } from 'date-fns/locale'
-import { format } from 'date-fns'
 import { useApplicationDate } from '@renderer/contexts/ApplicationDateContext'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateBoundary'
@@ -10,6 +9,7 @@ import { QueryChartLoadingState } from '@renderer/components/query-state/QueryLo
 import { ChartDataType } from '@renderer/types/ChartDataType'
 import { colors, chartColors } from '@renderer/colors'
 import { useForecast } from '@renderer/features/previsao/useForecast'
+import { hojeISO } from '@renderer/appClock'
 
 type RemoteChartDataType = {
   dia: string
@@ -37,7 +37,7 @@ export function FaturamentoChart(): React.JSX.Element {
   // A previsão é uma extensão do "hoje" em diante; só faz sentido sobrepô-la
   // quando o período selecionado alcança o presente (senão a projeção futura
   // apareceria desconectada de um intervalo passado).
-  const todayISO = format(new Date(), 'yyyy-MM-dd')
+  const todayISO = hojeISO()
   const showForecast = endISO >= todayISO
 
   const query = useQuery({

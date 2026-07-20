@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { useQuery, UseQueryResult } from '@tanstack/react-query'
 import { format, subDays } from 'date-fns'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
+import { hoje } from '@renderer/appClock'
 
 export type DiaSerie = {
   dia: string
@@ -24,7 +25,7 @@ export function useSeriesDiarias(): UseQueryResult<DiaSerie[]> {
   const { httpClient } = useHttpClient()
 
   const { startISO, endISO } = useMemo(() => {
-    const end = new Date()
+    const end = hoje()
     const start = subDays(end, 29)
     return {
       startISO: format(start, 'yyyy-MM-dd'),

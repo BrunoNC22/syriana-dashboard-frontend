@@ -15,6 +15,7 @@ import {
   ValorPrevisto
 } from './types'
 import { gerarCsvCompras, nomeArquivoRelatorio } from './relatorioCsv'
+import { hoje as relogioHoje } from '@renderer/appClock'
 
 // ─────────────────────────────────────────── Formatação
 
@@ -368,7 +369,7 @@ const DatasEspeciais = ({ datas }: { datas: Feriado[] }): JSX.Element | null => 
 
 /** Ao clicar numa linha, abre os detalhes do insumo com os últimos 90 dias. */
 const abrirInsumo = (linha: LinhaCompra): void => {
-  const hoje = new Date()
+  const hoje = relogioHoje()
   const dataFim = format(hoje, 'yyyy-MM-dd')
   const dataInicio = format(subDays(hoje, 90), 'yyyy-MM-dd')
   window.electron.openWindow(

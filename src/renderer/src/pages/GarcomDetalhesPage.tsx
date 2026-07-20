@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { useParams, useSearchParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { endOfMonth, format, isSameDay, parseISO, startOfMonth } from 'date-fns'
+import { hoje } from '@renderer/appClock'
 import { ptBR } from 'date-fns/locale'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateBoundary'
@@ -72,9 +73,8 @@ export function GarcomDetalhesPage(): React.JSX.Element {
   const { id } = useParams<{ id: string }>()
   const [searchParams] = useSearchParams()
 
-  const dataInicio =
-    searchParams.get('dataInicio') ?? format(startOfMonth(new Date()), 'yyyy-MM-dd')
-  const dataFim = searchParams.get('dataFim') ?? format(endOfMonth(new Date()), 'yyyy-MM-dd')
+  const dataInicio = searchParams.get('dataInicio') ?? format(startOfMonth(hoje()), 'yyyy-MM-dd')
+  const dataFim = searchParams.get('dataFim') ?? format(endOfMonth(hoje()), 'yyyy-MM-dd')
 
   const { httpClient } = useHttpClient()
 

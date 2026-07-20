@@ -8,6 +8,8 @@ import type { ExportResult } from '../shared/exportResult'
 const api = {
   verifyAdminPassword: (password: string): Promise<boolean> =>
     ipcRenderer.invoke('verify-admin-password', password),
+  /** Data simulada de desenvolvimento (`yyyy-MM-dd`), ou null p/ relógio real. */
+  getDataAtual: (): Promise<string | null> => ipcRenderer.invoke('get-data-atual'),
   /** Exporta a janela atual como PDF (printToPDF no main). */
   exportarPdf: (nomeSugerido: string): Promise<ExportResult> =>
     ipcRenderer.invoke('export-pdf', nomeSugerido),
