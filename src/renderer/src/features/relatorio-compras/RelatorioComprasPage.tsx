@@ -6,49 +6,15 @@ import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateBoundary'
 import { DataTable, DataTableColumn } from '@renderer/components/DataTable'
 import { normalizar } from '@renderer/features/busca/matching'
-
-// ─────────────────────────────────────────── Tipos (espelho dos DTOs F5-02)
-
-type ValorPrevisto = {
-  total: number
-  limiteInferior: number
-  limiteSuperior: number
-  metodo: string
-  mape: number | null
-}
-type Feriado = { data: string; nome: string; categoria: string }
-type Panorama = {
-  faturamento: ValorPrevisto
-  pedidos: ValorPrevisto
-  datasEspeciais: Feriado[]
-}
-type LinhaCompra = {
-  id: string
-  nome: string
-  siglaUnidadeDeMedida: string
-  consumoPrevisto: number
-  custoPrevisto: number
-  estoqueAtual: number | null
-  estoqueConfiavel: boolean
-  estoqueSeguranca: number
-  margemSeguranca: string
-  compraRecomendada: number
-  custoCompraRecomendada: number
-  riscoRuptura: string
-  diasCobertura: number | null
-  excesso: boolean
-  justificativa: string
-}
-type RelatorioCompras = {
-  geradoEm: string
-  horizonteInicio: string
-  horizonteFim: string
-  horizonteDias: number
-  baseHistorica: string
-  panorama: Panorama
-  compras: LinhaCompra[]
-  avisos: string[]
-}
+import {
+  Feriado,
+  LinhaCompra,
+  Panorama,
+  PRIORIDADE_RISCO,
+  RelatorioCompras,
+  ValorPrevisto
+} from './types'
+import { gerarCsvCompras, nomeArquivoRelatorio } from './relatorioCsv'
 
 // ─────────────────────────────────────────── Formatação
 
@@ -73,9 +39,6 @@ const HORIZONTES: { valor: string; rotulo: string }[] = [
   { valor: '30d', rotulo: 'Próximo mês' },
   { valor: '90d', rotulo: 'Próximos 3 meses' }
 ]
-
-// Prioridade do semáforo p/ ordenação (maior = mais urgente).
-const PRIORIDADE_RISCO: Record<string, number> = { alto: 3, medio: 2, baixo: 1 }
 
 // ─────────────────────────────────────────── Página
 
@@ -131,7 +94,7 @@ const HorizonteTabs = ({
   horizonte: string
   onChange: (h: string) => void
 }): JSX.Element => (
-  <div className="inline-flex gap-1 p-1 rounded-xl bg-surface-container border border-outline-variant">
+  <div className="inline-flex gap-1 p-1 rounded-xl bg-surface-container border border-outline-variant print:hidden">
     {HORIZONTES.map(({ valor, rotulo }) => {
       const ativo = horizonte === valor
       return (
@@ -167,11 +130,103 @@ const RelatorioSkeleton = (): JSX.Element => (
 
 const RelatorioCorpo = ({ data }: { data: RelatorioCompras }): JSX.Element => (
   <div className="space-y-stack-lg">
+    <ExportBar data={data} />
     <Cabecalho data={data} />
     <PanoramaSecao panorama={data.panorama} />
     <TabelaCompras linhas={data.compras} />
     <Avisos avisos={data.avisos} />
   </div>
+)
+
+// ─────────────────────────────────────────── Exportação
+
+type StatusExport = { tipo: 'ok' | 'erro'; mensagem: string } | null
+
+/**
+ * Exportações do relatório. Fica fora da impressão (`print:hidden`) para não
+ * aparecer dentro do próprio PDF gerado a partir desta janela.
+ */
+const ExportBar = ({ data }: { data: RelatorioCompras }): JSX.Element => {
+  const [ocupado, setOcupado] = useState<'pdf' | 'csv' | null>(null)
+  const [status, setStatus] = useState<StatusExport>(null)
+
+  const executar = async (tipo: 'pdf' | 'csv'): Promise<void> => {
+    setOcupado(tipo)
+    setStatus(null)
+    try {
+      const nome = nomeArquivoRelatorio(data, tipo)
+      const resultado =
+        tipo === 'pdf'
+          ? await window.api.exportarPdf(nome)
+          : await window.api.exportarCsv(gerarCsvCompras(data.compras), nome)
+
+      // Cancelar não é erro — some sem mensagem.
+      if (resultado.ok) {
+        setStatus({ tipo: 'ok', mensagem: `Salvo em ${resultado.caminho}` })
+      } else if (!resultado.cancelado) {
+        setStatus({ tipo: 'erro', mensagem: resultado.erro ?? 'Falha ao exportar' })
+      }
+    } catch (err) {
+      setStatus({ tipo: 'erro', mensagem: err instanceof Error ? err.message : String(err) })
+    } finally {
+      setOcupado(null)
+    }
+  }
+
+  return (
+    <div className="flex items-center justify-end gap-3 flex-wrap print:hidden">
+      {status && (
+        <span
+          className={`text-xs truncate max-w-md ${
+            status.tipo === 'ok' ? 'text-emerald-400' : 'text-error'
+          }`}
+          title={status.mensagem}
+        >
+          {status.mensagem}
+        </span>
+      )}
+      <BotaoExport
+        icone="picture_as_pdf"
+        rotulo="Exportar PDF"
+        carregando={ocupado === 'pdf'}
+        desabilitado={ocupado !== null}
+        onClick={() => executar('pdf')}
+      />
+      <BotaoExport
+        icone="table_view"
+        rotulo="Exportar CSV"
+        carregando={ocupado === 'csv'}
+        desabilitado={ocupado !== null || data.compras.length === 0}
+        onClick={() => executar('csv')}
+      />
+    </div>
+  )
+}
+
+const BotaoExport = ({
+  icone,
+  rotulo,
+  carregando,
+  desabilitado,
+  onClick
+}: {
+  icone: string
+  rotulo: string
+  carregando: boolean
+  desabilitado: boolean
+  onClick: () => void
+}): JSX.Element => (
+  <button
+    type="button"
+    onClick={onClick}
+    disabled={desabilitado}
+    className="px-3 py-1.5 border border-primary/20 bg-primary/5 text-primary text-sm font-bold rounded-lg hover:bg-primary/10 transition-colors flex items-center gap-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
+  >
+    <span className={`material-symbols-outlined text-base ${carregando ? 'animate-spin' : ''}`}>
+      {carregando ? 'progress_activity' : icone}
+    </span>
+    {carregando ? 'Gerando…' : rotulo}
+  </button>
 )
 
 // ─────────────────────────────────────────── Cabeçalho
@@ -488,12 +543,12 @@ const TabelaCompras = ({ linhas }: { linhas: LinhaCompra[] }): JSX.Element => {
           {linhas.length.toLocaleString('pt-BR')} insumos
         </span>
       </div>
-      <p className="text-sm text-on-surface-variant opacity-70 -mt-1">
+      <p className="text-sm text-on-surface-variant opacity-70 -mt-1 print:hidden">
         Uma linha por insumo consumido recentemente. Passe o mouse sobre o nome para ver a
         justificativa; clique numa linha para abrir o histórico do insumo (últimos 90 dias).
       </p>
 
-      <div className="flex items-center justify-between gap-3 flex-wrap">
+      <div className="flex items-center justify-between gap-3 flex-wrap print:hidden">
         <div className="flex items-center gap-2 rounded-lg border border-outline-variant bg-surface-container-low px-3 py-1.5 w-[260px] focus-within:border-primary/40 transition-colors">
           <span className="material-symbols-outlined text-[18px] text-on-surface-variant">
             search

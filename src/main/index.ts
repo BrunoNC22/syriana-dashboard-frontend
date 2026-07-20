@@ -1,4 +1,4 @@
-import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog, IpcMainInvokeEvent } from 'electron'
 
 import { join } from 'path'
 
@@ -13,6 +13,7 @@ import { FileLoggerAdapter } from './logger/FileLoggerAdapter'
 import config from '../shared/config'
 import { openWindow, openModal } from './windowManager'
 import type { WindowOptions } from '../shared/windowOptions'
+import type { ExportResult } from '../shared/exportResult'
 
 let backendProcess: ChildProcess | null = null
 /** Código de saída do backend quando ele encerra antes da hora (null = ainda rodando). */
@@ -53,6 +54,85 @@ function verifyAdminPassword(password: string): boolean {
       : DEFAULT_ADMIN_PASSWORD
 
   return password === expected
+}
+
+/**
+ * Pergunta o destino ao usuário e grava o arquivo. Compartilhado pelas
+ * exportações de PDF e CSV — só muda o conteúdo e o filtro de extensão.
+ */
+async function salvarComDialogo(
+  janela: BrowserWindow,
+  opcoes: { titulo: string; nomeSugerido: string; filtro: { name: string; extensions: string[] } },
+  conteudo: () => Promise<Buffer | string>
+): Promise<ExportResult> {
+  const { canceled, filePath } = await dialog.showSaveDialog(janela, {
+    title: opcoes.titulo,
+    defaultPath: opcoes.nomeSugerido,
+    filters: [opcoes.filtro]
+  })
+
+  if (canceled || !filePath) {
+    await logger.info(`Exportação cancelada pelo usuário: ${opcoes.titulo}`)
+    return { ok: false, cancelado: true }
+  }
+
+  try {
+    writeFileSync(filePath, await conteudo())
+    await logger.info(`Arquivo exportado em ${filePath}`)
+    return { ok: true, caminho: filePath }
+  } catch (err) {
+    const erro = err instanceof Error ? err.message : String(err)
+    await logger.error(`Falha ao exportar ${filePath}: ${erro}`)
+    return { ok: false, erro }
+  }
+}
+
+/**
+ * Exporta a janela que chamou como PDF. `printToPDF` é nativo do Electron —
+ * nenhuma lib de PDF no backend nem no renderer.
+ */
+async function exportarPdf(event: IpcMainInvokeEvent, nomeSugerido: string): Promise<ExportResult> {
+  const janela = BrowserWindow.fromWebContents(event.sender)
+  if (!janela) return { ok: false, erro: 'Janela de origem não encontrada' }
+
+  return salvarComDialogo(
+    janela,
+    {
+      titulo: 'Salvar relatório em PDF',
+      nomeSugerido,
+      filtro: { name: 'PDF', extensions: ['pdf'] }
+    },
+    () =>
+      event.sender.printToPDF({
+        pageSize: 'A4',
+        // A tabela de compras é larga: em retrato as colunas seriam cortadas.
+        landscape: true,
+        // Sem o fundo, o texto claro do tema escuro sairia ilegível.
+        printBackground: true,
+        margins: { top: 0.4, bottom: 0.4, left: 0.4, right: 0.4 }
+      })
+  )
+}
+
+/** Salva o CSV já montado pelo renderer. */
+async function exportarCsv(
+  event: IpcMainInvokeEvent,
+  conteudo: string,
+  nomeSugerido: string
+): Promise<ExportResult> {
+  const janela = BrowserWindow.fromWebContents(event.sender)
+  if (!janela) return { ok: false, erro: 'Janela de origem não encontrada' }
+
+  return salvarComDialogo(
+    janela,
+    {
+      titulo: 'Salvar tabela de compras em CSV',
+      nomeSugerido,
+      filtro: { name: 'CSV', extensions: ['csv'] }
+    },
+    // BOM UTF-8: sem ele o Excel em pt-BR abre os acentos corrompidos.
+    async () => String.fromCharCode(0xfeff) + conteudo
+  )
 }
 
 function startBackend(): Promise<void> {
@@ -494,6 +574,9 @@ app.whenReady().then(async () => {
     logger.info(`Verificação de senha de administrador: ${isValid ? 'sucesso' : 'falha'}`)
     return isValid
   })
+
+  ipcMain.handle('export-pdf', exportarPdf)
+  ipcMain.handle('export-csv', exportarCsv)
 
   ipcMain.handle('open-window', (event, route: string, options: WindowOptions) => {
     const parentWindow = BrowserWindow.fromWebContents(event.sender) ?? undefined

@@ -62,8 +62,9 @@ export function DataTable<T>({
     )
   }
 
+  // print:overflow-visible — no PDF não há scroll: colunas cortadas sumiriam.
   return (
-    <div className="overflow-x-auto rounded-xl border border-outline-variant shadow-md">
+    <div className="overflow-x-auto print:overflow-visible rounded-xl border border-outline-variant shadow-md">
       <table className="w-full text-sm border-collapse">
         <thead>
           <tr className="bg-surface-container-high text-on-surface-variant">

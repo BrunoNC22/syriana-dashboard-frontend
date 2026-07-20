@@ -2,11 +2,18 @@ import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
 import { LoggerOutputPort } from '../main/logger/LoggerOutputPort'
 import type { WindowOptions } from '../shared/windowOptions'
+import type { ExportResult } from '../shared/exportResult'
 
 // Custom APIs for renderer
 const api = {
   verifyAdminPassword: (password: string): Promise<boolean> =>
-    ipcRenderer.invoke('verify-admin-password', password)
+    ipcRenderer.invoke('verify-admin-password', password),
+  /** Exporta a janela atual como PDF (printToPDF no main). */
+  exportarPdf: (nomeSugerido: string): Promise<ExportResult> =>
+    ipcRenderer.invoke('export-pdf', nomeSugerido),
+  /** Salva um CSV já montado no renderer. */
+  exportarCsv: (conteudo: string, nomeSugerido: string): Promise<ExportResult> =>
+    ipcRenderer.invoke('export-csv', conteudo, nomeSugerido)
 }
 const logger: LoggerOutputPort = {
   log: async (props) => {
