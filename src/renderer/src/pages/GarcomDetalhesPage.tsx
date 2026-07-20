@@ -8,6 +8,8 @@ import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateBoundary'
 import { EtiquetaChip } from '@renderer/components/EtiquetaChip'
 import { EtiquetaSelect } from '@renderer/components/EtiquetaSelect'
+import { TablePagination } from '@renderer/components/TablePagination'
+import { usePaginacao } from '@renderer/components/usePaginacao'
 
 type ProdutoRanking = {
   nomeProduto: string
@@ -33,6 +35,65 @@ type MetricCardProps = {
   icon: string
   sub?: string
   valueClassName?: string
+}
+
+/**
+ * Produtos mais lançados pelo garçom no período (já filtrados por etiqueta).
+ * Componente próprio porque a paginação usa hook, e o corpo do
+ * QueryStateBoundary é render-prop (só roda no estado de sucesso — chamar
+ * hook ali quebraria as regras dos hooks).
+ */
+const TabelaProdutosVendidos = ({
+  produtos
+}: {
+  produtos: ProdutoRanking[]
+}): React.JSX.Element => {
+  const paginacao = usePaginacao(produtos.length)
+
+  return (
+    <div className="rounded-xl border border-outline-variant shadow-md overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-surface-container-high text-on-surface-variant">
+              <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
+                #
+              </th>
+              <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
+                Produto
+              </th>
+              <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
+                Etiqueta
+              </th>
+              <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
+                Qtd. vendida
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {produtos.map((p, i) => (
+              <tr
+                key={i}
+                className={`bg-surface-container border-t border-outline-variant hover:bg-surface-container-high transition-colors ${paginacao.classeDaLinha(i)}`}
+              >
+                <td className="px-stack-md py-stack-sm text-on-surface-variant opacity-70">
+                  {i + 1}
+                </td>
+                <td className="px-stack-md py-stack-sm text-on-surface">{p.nomeProduto}</td>
+                <td className="px-stack-md py-stack-sm">
+                  <EtiquetaChip etiqueta={p.etiqueta} />
+                </td>
+                <td className="px-stack-md py-stack-sm text-right text-on-surface-variant whitespace-nowrap">
+                  {p.quantidade.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <TablePagination paginacao={paginacao} />
+    </div>
+  )
 }
 
 const MetricCard = ({
@@ -224,49 +285,7 @@ export function GarcomDetalhesPage(): React.JSX.Element {
                           </button>
                         </div>
                       ) : (
-                        <div className="overflow-x-auto rounded-xl border border-outline-variant shadow-md">
-                          <table className="w-full text-sm border-collapse">
-                            <thead>
-                              <tr className="bg-surface-container-high text-on-surface-variant">
-                                <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
-                                  #
-                                </th>
-                                <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
-                                  Produto
-                                </th>
-                                <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
-                                  Etiqueta
-                                </th>
-                                <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
-                                  Qtd. vendida
-                                </th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {filtrados.map((p, i) => (
-                                <tr
-                                  key={i}
-                                  className="bg-surface-container border-t border-outline-variant hover:bg-surface-container-high transition-colors"
-                                >
-                                  <td className="px-stack-md py-stack-sm text-on-surface-variant opacity-70">
-                                    {i + 1}
-                                  </td>
-                                  <td className="px-stack-md py-stack-sm text-on-surface">
-                                    {p.nomeProduto}
-                                  </td>
-                                  <td className="px-stack-md py-stack-sm">
-                                    <EtiquetaChip etiqueta={p.etiqueta} />
-                                  </td>
-                                  <td className="px-stack-md py-stack-sm text-right text-on-surface-variant whitespace-nowrap">
-                                    {p.quantidade.toLocaleString('pt-BR', {
-                                      maximumFractionDigits: 0
-                                    })}
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
+                        <TabelaProdutosVendidos produtos={filtrados} />
                       )}
                     </section>
                   )

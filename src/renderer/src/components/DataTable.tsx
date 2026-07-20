@@ -1,4 +1,6 @@
 import { useMemo, useState } from 'react'
+import { TablePagination } from '@renderer/components/TablePagination'
+import { TAMANHO_PAGINA_PADRAO, usePaginacao } from '@renderer/components/usePaginacao'
 
 export type DataTableColumn<T> = {
   /** Identificador único da coluna (usado para o estado de ordenação). */
@@ -17,22 +19,30 @@ type DataTableProps<T> = {
   onRowClick?: (row: T) => void
   /** Ordenação inicial. */
   initialSort?: { key: string; dir: 'asc' | 'desc' }
+  /** Itens por página iniciais. Default: 10. */
+  pageSize?: number
 }
 
 /**
- * Tabela genérica ordenável, no padrão visual das tabelas do app
+ * Tabela genérica ordenável e paginada, no padrão visual das tabelas do app
  * (ver InsumoDetalhesPage). Inclui a coluna "#" com a posição na
  * ordenação atual. Filtros/busca ficam a cargo de quem usa — a
  * tabela recebe as linhas já filtradas.
+ *
+ * <p>A paginação é só visual: todas as linhas continuam no DOM (ver
+ * {@link usePaginacao}), então o "#" segue sendo a posição no ranking
+ * inteiro — não a posição dentro da página.
  */
 export function DataTable<T>({
   columns,
   rows,
   rowKey,
   onRowClick,
-  initialSort
+  initialSort,
+  pageSize = TAMANHO_PAGINA_PADRAO
 }: DataTableProps<T>): React.JSX.Element {
   const [sort, setSort] = useState(initialSort)
+  const paginacao = usePaginacao(rows.length, pageSize)
 
   const sortedRows = useMemo(() => {
     if (!sort) return rows
@@ -64,59 +74,64 @@ export function DataTable<T>({
 
   // print:overflow-visible — no PDF não há scroll: colunas cortadas sumiriam.
   return (
-    <div className="overflow-x-auto print:overflow-visible rounded-xl border border-outline-variant shadow-md">
-      <table className="w-full text-sm border-collapse">
-        <thead>
-          <tr className="bg-surface-container-high text-on-surface-variant">
-            <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">#</th>
-            {columns.map((coluna) => (
-              <th
-                key={coluna.key}
-                onClick={() => toggleSort(coluna)}
-                className={`px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap ${
-                  coluna.align === 'right' ? 'text-right' : 'text-left'
-                } ${coluna.sortValue ? 'cursor-pointer select-none hover:text-on-surface' : ''}`}
-              >
-                <span className="inline-flex items-center gap-1">
-                  {coluna.header}
-                  {sort?.key === coluna.key && (
-                    <span className="material-symbols-outlined text-[14px] text-primary">
-                      {sort.dir === 'desc' ? 'arrow_downward' : 'arrow_upward'}
-                    </span>
-                  )}
-                </span>
+    <div className="rounded-xl border border-outline-variant shadow-md overflow-hidden">
+      <div className="overflow-x-auto print:overflow-visible">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-surface-container-high text-on-surface-variant">
+              <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
+                #
               </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {sortedRows.map((row, i) => (
-            <tr
-              key={rowKey(row)}
-              onClick={onRowClick ? () => onRowClick(row) : undefined}
-              className={`bg-surface-container border-t border-outline-variant transition-colors ${
-                onRowClick ? 'hover:bg-surface-container-high cursor-pointer' : ''
-              }`}
-            >
-              <td className="px-stack-md py-stack-sm text-on-surface-variant opacity-70">
-                {i + 1}
-              </td>
               {columns.map((coluna) => (
-                <td
+                <th
                   key={coluna.key}
-                  className={`px-stack-md py-stack-sm whitespace-nowrap ${
-                    coluna.align === 'right'
-                      ? 'text-right text-on-surface-variant'
-                      : 'text-on-surface'
-                  }`}
+                  onClick={() => toggleSort(coluna)}
+                  className={`px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap ${
+                    coluna.align === 'right' ? 'text-right' : 'text-left'
+                  } ${coluna.sortValue ? 'cursor-pointer select-none hover:text-on-surface' : ''}`}
                 >
-                  {coluna.render(row)}
-                </td>
+                  <span className="inline-flex items-center gap-1">
+                    {coluna.header}
+                    {sort?.key === coluna.key && (
+                      <span className="material-symbols-outlined text-[14px] text-primary">
+                        {sort.dir === 'desc' ? 'arrow_downward' : 'arrow_upward'}
+                      </span>
+                    )}
+                  </span>
+                </th>
               ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {sortedRows.map((row, i) => (
+              <tr
+                key={rowKey(row)}
+                onClick={onRowClick ? () => onRowClick(row) : undefined}
+                className={`bg-surface-container border-t border-outline-variant transition-colors ${
+                  onRowClick ? 'hover:bg-surface-container-high cursor-pointer' : ''
+                } ${paginacao.classeDaLinha(i)}`}
+              >
+                <td className="px-stack-md py-stack-sm text-on-surface-variant opacity-70">
+                  {i + 1}
+                </td>
+                {columns.map((coluna) => (
+                  <td
+                    key={coluna.key}
+                    className={`px-stack-md py-stack-sm whitespace-nowrap ${
+                      coluna.align === 'right'
+                        ? 'text-right text-on-surface-variant'
+                        : 'text-on-surface'
+                    }`}
+                  >
+                    {coluna.render(row)}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <TablePagination paginacao={paginacao} />
     </div>
   )
 }

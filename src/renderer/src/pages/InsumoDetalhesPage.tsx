@@ -6,6 +6,8 @@ import { hoje } from '@renderer/appClock'
 import { ptBR } from 'date-fns/locale'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateBoundary'
+import { TablePagination } from '@renderer/components/TablePagination'
+import { usePaginacao } from '@renderer/components/usePaginacao'
 
 type ProdutoQueUsaInsumo = {
   id: string
@@ -31,6 +33,107 @@ type MetricCardProps = {
   icon: string
   sub?: string
   valueClassName?: string
+}
+
+/**
+ * Produtos que mais consumiram o insumo no período. Componente próprio porque
+ * a paginação usa hook, e o corpo do QueryStateBoundary é render-prop (só roda
+ * no estado de sucesso — chamar hook ali quebraria as regras dos hooks).
+ *
+ * O rodapé é o total do período inteiro, não o da página — daí o rótulo
+ * "todos os produtos".
+ */
+const TabelaProdutos = ({
+  produtos,
+  custoTotal,
+  quantidadeTotal,
+  sigla,
+  brl,
+  onProdutoClick
+}: {
+  produtos: ProdutoQueUsaInsumo[]
+  custoTotal: number
+  quantidadeTotal: number
+  sigla: string | null
+  brl: Intl.NumberFormat
+  onProdutoClick: (produto: ProdutoQueUsaInsumo) => void
+}): React.JSX.Element => {
+  const paginacao = usePaginacao(produtos.length)
+
+  return (
+    <div className="rounded-xl border border-outline-variant shadow-md overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-surface-container-high text-on-surface-variant">
+              <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
+                #
+              </th>
+              <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
+                Produto
+              </th>
+              <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
+                Qtd. utilizada
+              </th>
+              <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
+                Custo total
+              </th>
+              <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
+                % do custo
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {produtos.map((produto, i) => (
+              <tr
+                key={produto.id}
+                onClick={() => onProdutoClick(produto)}
+                className={`bg-surface-container border-t border-outline-variant hover:bg-surface-container-high transition-colors cursor-pointer ${paginacao.classeDaLinha(i)}`}
+              >
+                <td className="px-stack-md py-stack-sm text-on-surface-variant opacity-70">
+                  {i + 1}
+                </td>
+                <td className="px-stack-md py-stack-sm text-on-surface">{produto.nomeProduto}</td>
+                <td className="px-stack-md py-stack-sm text-right text-on-surface-variant whitespace-nowrap">
+                  {produto.quantidadeUsada.toLocaleString('pt-BR', {
+                    maximumFractionDigits: 3
+                  })}
+                  {sigla && <span className="opacity-60"> {sigla}</span>}
+                </td>
+                <td className="px-stack-md py-stack-sm text-right text-on-surface-variant whitespace-nowrap">
+                  {brl.format(produto.custoTotal)}
+                </td>
+                <td className="px-stack-md py-stack-sm text-right text-on-surface-variant opacity-70 whitespace-nowrap">
+                  {custoTotal > 0
+                    ? `${((produto.custoTotal / custoTotal) * 100).toFixed(1)}%`
+                    : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="bg-surface-container-high border-t-2 border-outline">
+              <td className="px-stack-md py-stack-sm" />
+              <td className="px-stack-md py-stack-sm font-label-caps text-label-caps text-on-surface-variant">
+                Total do período (todos os produtos)
+              </td>
+              <td className="px-stack-md py-stack-sm text-right font-data-display font-bold text-on-surface whitespace-nowrap">
+                {quantidadeTotal.toLocaleString('pt-BR', { maximumFractionDigits: 3 })}
+                {sigla && <span className="opacity-60 font-normal"> {sigla}</span>}
+              </td>
+              <td className="px-stack-md py-stack-sm text-right font-data-display font-bold text-primary whitespace-nowrap">
+                {brl.format(custoTotal)}
+              </td>
+              <td className="px-stack-md py-stack-sm text-right text-on-surface-variant opacity-70 whitespace-nowrap">
+                100%
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <TablePagination paginacao={paginacao} />
+    </div>
+  )
 }
 
 const MetricCard = ({
@@ -198,79 +301,14 @@ export function InsumoDetalhesPage(): React.JSX.Element {
                       </p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto rounded-xl border border-outline-variant shadow-md">
-                      <table className="w-full text-sm border-collapse">
-                        <thead>
-                          <tr className="bg-surface-container-high text-on-surface-variant">
-                            <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
-                              #
-                            </th>
-                            <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
-                              Produto
-                            </th>
-                            <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
-                              Qtd. utilizada
-                            </th>
-                            <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
-                              Custo total
-                            </th>
-                            <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
-                              % do custo
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {data.produtos.map((produto, i) => (
-                            <tr
-                              key={produto.id}
-                              onClick={() => abrirProduto(produto)}
-                              className="bg-surface-container border-t border-outline-variant hover:bg-surface-container-high transition-colors cursor-pointer"
-                            >
-                              <td className="px-stack-md py-stack-sm text-on-surface-variant opacity-70">
-                                {i + 1}
-                              </td>
-                              <td className="px-stack-md py-stack-sm text-on-surface">
-                                {produto.nomeProduto}
-                              </td>
-                              <td className="px-stack-md py-stack-sm text-right text-on-surface-variant whitespace-nowrap">
-                                {produto.quantidadeUsada.toLocaleString('pt-BR', {
-                                  maximumFractionDigits: 3
-                                })}
-                                {sigla && <span className="opacity-60"> {sigla}</span>}
-                              </td>
-                              <td className="px-stack-md py-stack-sm text-right text-on-surface-variant whitespace-nowrap">
-                                {brl.format(produto.custoTotal)}
-                              </td>
-                              <td className="px-stack-md py-stack-sm text-right text-on-surface-variant opacity-70 whitespace-nowrap">
-                                {data.custoTotal > 0
-                                  ? `${((produto.custoTotal / data.custoTotal) * 100).toFixed(1)}%`
-                                  : '—'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr className="bg-surface-container-high border-t-2 border-outline">
-                            <td className="px-stack-md py-stack-sm" />
-                            <td className="px-stack-md py-stack-sm font-label-caps text-label-caps text-on-surface-variant">
-                              Total do período (todos os produtos)
-                            </td>
-                            <td className="px-stack-md py-stack-sm text-right font-data-display font-bold text-on-surface whitespace-nowrap">
-                              {data.quantidadeTotal.toLocaleString('pt-BR', {
-                                maximumFractionDigits: 3
-                              })}
-                              {sigla && <span className="opacity-60 font-normal"> {sigla}</span>}
-                            </td>
-                            <td className="px-stack-md py-stack-sm text-right font-data-display font-bold text-primary whitespace-nowrap">
-                              {brl.format(data.custoTotal)}
-                            </td>
-                            <td className="px-stack-md py-stack-sm text-right text-on-surface-variant opacity-70 whitespace-nowrap">
-                              100%
-                            </td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
+                    <TabelaProdutos
+                      produtos={data.produtos}
+                      custoTotal={data.custoTotal}
+                      quantidadeTotal={data.quantidadeTotal}
+                      sigla={sigla}
+                      brl={brl}
+                      onProdutoClick={abrirProduto}
+                    />
                   )}
                   {data.produtos.length > 0 && (
                     <p className="text-xs text-on-surface-variant opacity-60">

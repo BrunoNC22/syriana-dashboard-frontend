@@ -6,6 +6,8 @@ import { hoje } from '@renderer/appClock'
 import { ptBR } from 'date-fns/locale'
 import { useHttpClient } from '@renderer/contexts/httpClient/HttpClientContext'
 import { QueryStateBoundary } from '@renderer/components/query-state/QueryStateBoundary'
+import { TablePagination } from '@renderer/components/TablePagination'
+import { usePaginacao } from '@renderer/components/usePaginacao'
 
 type InsumoDoProduto = {
   nome: string
@@ -51,6 +53,87 @@ const MetricCard = ({
     {sub && <span className="text-xs text-on-surface-variant opacity-70 mt-1 block">{sub}</span>}
   </div>
 )
+
+/**
+ * Insumos consumidos pelo produto no período. Componente próprio porque a
+ * paginação usa hook, e o corpo do QueryStateBoundary é render-prop (só roda
+ * no estado de sucesso — chamar hook ali quebraria as regras dos hooks).
+ *
+ * O rodapé é o total do período inteiro, não o da página.
+ */
+const TabelaInsumos = ({
+  insumos,
+  custoTotal,
+  brl
+}: {
+  insumos: InsumoDoProduto[]
+  custoTotal: number
+  brl: Intl.NumberFormat
+}): React.JSX.Element => {
+  const paginacao = usePaginacao(insumos.length)
+
+  return (
+    <div className="rounded-xl border border-outline-variant shadow-md overflow-hidden">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-surface-container-high text-on-surface-variant">
+              <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
+                Insumo
+              </th>
+              <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
+                Qtd. total
+              </th>
+              <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
+                Custo total
+              </th>
+              <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
+                % do custo
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {insumos.map((insumo, i) => (
+              <tr
+                key={i}
+                className={`bg-surface-container border-t border-outline-variant hover:bg-surface-container-high transition-colors ${paginacao.classeDaLinha(i)}`}
+              >
+                <td className="px-stack-md py-stack-sm text-on-surface">{insumo.nome}</td>
+                <td className="px-stack-md py-stack-sm text-right text-on-surface-variant whitespace-nowrap">
+                  {insumo.quantidadeTotal.toLocaleString('pt-BR', {
+                    maximumFractionDigits: 3
+                  })}{' '}
+                  <span className="opacity-60">{insumo.siglaUnidadeDeMedida}</span>
+                </td>
+                <td className="px-stack-md py-stack-sm text-right text-on-surface-variant whitespace-nowrap">
+                  {brl.format(insumo.custoTotal)}
+                </td>
+                <td className="px-stack-md py-stack-sm text-right text-on-surface-variant opacity-70 whitespace-nowrap">
+                  {custoTotal > 0 ? `${((insumo.custoTotal / custoTotal) * 100).toFixed(1)}%` : '—'}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr className="bg-surface-container-high border-t border-outline-variant">
+              <td className="px-stack-md py-stack-sm font-label-caps text-label-caps text-on-surface-variant">
+                Total
+              </td>
+              <td className="px-stack-md py-stack-sm" />
+              <td className="px-stack-md py-stack-sm text-right font-bold text-primary whitespace-nowrap">
+                {brl.format(custoTotal)}
+              </td>
+              <td className="px-stack-md py-stack-sm text-right text-on-surface-variant opacity-70">
+                100%
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <TablePagination paginacao={paginacao} />
+    </div>
+  )
+}
 
 const LoadingSkeleton = (): React.JSX.Element => (
   <div className="flex flex-col gap-gutter">
@@ -190,64 +273,7 @@ export function ProductDetailsPage(): React.JSX.Element {
                       </p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto rounded-xl border border-outline-variant shadow-md">
-                      <table className="w-full text-sm border-collapse">
-                        <thead>
-                          <tr className="bg-surface-container-high text-on-surface-variant">
-                            <th className="text-left px-stack-md py-stack-sm font-label-caps text-label-caps">
-                              Insumo
-                            </th>
-                            <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
-                              Qtd. total
-                            </th>
-                            <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
-                              Custo total
-                            </th>
-                            <th className="text-right px-stack-md py-stack-sm font-label-caps text-label-caps whitespace-nowrap">
-                              % do custo
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {data.insumos.map((insumo, i) => (
-                            <tr
-                              key={i}
-                              className="bg-surface-container border-t border-outline-variant hover:bg-surface-container-high transition-colors"
-                            >
-                              <td className="px-stack-md py-stack-sm text-on-surface">{insumo.nome}</td>
-                              <td className="px-stack-md py-stack-sm text-right text-on-surface-variant whitespace-nowrap">
-                                {insumo.quantidadeTotal.toLocaleString('pt-BR', {
-                                  maximumFractionDigits: 3
-                                })}{' '}
-                                <span className="opacity-60">{insumo.siglaUnidadeDeMedida}</span>
-                              </td>
-                              <td className="px-stack-md py-stack-sm text-right text-on-surface-variant whitespace-nowrap">
-                                {brl.format(insumo.custoTotal)}
-                              </td>
-                              <td className="px-stack-md py-stack-sm text-right text-on-surface-variant opacity-70 whitespace-nowrap">
-                                {data.custoTotal > 0
-                                  ? `${((insumo.custoTotal / data.custoTotal) * 100).toFixed(1)}%`
-                                  : '—'}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr className="bg-surface-container-high border-t border-outline-variant">
-                            <td className="px-stack-md py-stack-sm font-label-caps text-label-caps text-on-surface-variant">
-                              Total
-                            </td>
-                            <td className="px-stack-md py-stack-sm" />
-                            <td className="px-stack-md py-stack-sm text-right font-bold text-primary whitespace-nowrap">
-                              {brl.format(data.custoTotal)}
-                            </td>
-                            <td className="px-stack-md py-stack-sm text-right text-on-surface-variant opacity-70">
-                              100%
-                            </td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
+                    <TabelaInsumos insumos={data.insumos} custoTotal={data.custoTotal} brl={brl} />
                   )}
                 </section>
               </>
