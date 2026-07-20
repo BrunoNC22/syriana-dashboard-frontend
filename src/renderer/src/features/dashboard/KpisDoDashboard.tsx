@@ -1,14 +1,10 @@
 import { JSX, useState } from 'react'
-import { VarianteShell } from './VarianteShell'
-import { VARIANTES } from './variantes'
 import { useKpi } from './useKpi'
 import { CORES_TENDENCIA, MetricaKpi, formatarValor, percentual } from './metricas'
 import { Variacao } from './partes'
 import { estadoDoKpi } from './estados'
-import { TiraPrevisao } from './CardPrevisao'
+import { TiraPrevisao } from './TiraPrevisao'
 import { KpiDetalheModal } from './KpiDetalheModal'
-
-const variante = VARIANTES[3]
 
 type AoAbrir = (metrica: MetricaKpi) => void
 
@@ -36,8 +32,10 @@ const Segmento = ({
 }): JSX.Element => (
   <button
     onClick={() => onAbrir(metrica)}
-    className="text-left min-w-0 group"
+    // Piso na fração para que um segmento minúsculo continue clicável e com
+    // rótulo legível.
     style={{ flexGrow: Math.max(fracao, 0.08), flexBasis: 0 }}
+    className="text-left min-w-0 group"
     title={`${rotulo}: ${valor}`}
   >
     <div
@@ -58,7 +56,7 @@ const Segmento = ({
  *
  * Como três cards separados, a relação entre eles ficava por conta do gerente
  * fazer de cabeça. Aqui a barra mostra quanto do faturamento virou custo e
- * quanto sobrou, e a margem — que hoje não existe em lugar nenhum — vira
+ * quanto sobrou, e a margem — que antes não aparecia em lugar nenhum — vira
  * número de primeira classe.
  */
 const CardResultado = ({ onAbrir }: { onAbrir: AoAbrir }): JSX.Element => {
@@ -148,8 +146,8 @@ const CardResultado = ({ onAbrir }: { onAbrir: AoAbrir }): JSX.Element => {
           </div>
 
           <p className="mt-4 text-[11px] text-on-surface-variant opacity-50 leading-relaxed">
-            A barra é proporcional ao faturamento do período. Custo considera apenas insumos —
-            não inclui folha, aluguel ou demais despesas fixas.
+            A barra é proporcional ao faturamento do período. Custo considera apenas insumos — não
+            inclui folha, aluguel ou demais despesas fixas.
           </p>
         </>
       )}
@@ -160,8 +158,8 @@ const CardResultado = ({ onAbrir }: { onAbrir: AoAbrir }): JSX.Element => {
 /**
  * Operação: pedidos e ticket médio. O ticket médio é derivado de dois números
  * que já temos, sem requisição nova, e responde a uma pergunta que nenhum card
- * atual responde — "vendemos mais porque veio mais gente ou porque cada um
- * gastou mais?".
+ * respondia — "vendemos mais porque veio mais gente ou porque cada um gastou
+ * mais?".
  */
 const CardOperacao = ({ onAbrir }: { onAbrir: AoAbrir }): JSX.Element => {
   const pedidos = useKpi('pedidos')
@@ -220,21 +218,27 @@ const CardOperacao = ({ onAbrir }: { onAbrir: AoAbrir }): JSX.Element => {
   )
 }
 
-export const Dashboard4Page = (): JSX.Element => {
+/**
+ * Faixa de indicadores do dashboard: resultado financeiro, operação e a tira
+ * de previsão.
+ *
+ * A previsão fica fora dos dois cards de propósito — ela não responde ao
+ * período selecionado (o backend usa janela de treino própria), então colocá-la
+ * junto quebraria o contrato de que tudo ali é o intervalo escolhido.
+ */
+export const KpisDoDashboard = (): JSX.Element => {
   const [detalhe, setDetalhe] = useState<MetricaKpi | null>(null)
 
   return (
-    <VarianteShell variante={variante}>
-      <div className="space-y-gutter">
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-gutter">
-          <CardResultado onAbrir={setDetalhe} />
-          <CardOperacao onAbrir={setDetalhe} />
-        </div>
-
-        <TiraPrevisao />
-
-        <KpiDetalheModal metrica={detalhe} onClose={() => setDetalhe(null)} />
+    <div className="space-y-gutter">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-gutter">
+        <CardResultado onAbrir={setDetalhe} />
+        <CardOperacao onAbrir={setDetalhe} />
       </div>
-    </VarianteShell>
+
+      <TiraPrevisao />
+
+      <KpiDetalheModal metrica={detalhe} onClose={() => setDetalhe(null)} />
+    </div>
   )
 }

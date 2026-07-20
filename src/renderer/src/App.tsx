@@ -10,9 +10,6 @@ import { GarcomDetalhesPage } from './pages/GarcomDetalhesPage'
 import { RankingPage } from './features/ranking/RankingPage'
 import { SaudeCardapioPage } from './features/saude-cardapio/SaudeCardapioPage'
 import { RelatorioComprasPage } from './features/relatorio-compras/RelatorioComprasPage'
-import { Dashboard2Page } from './features/dashboard-variantes/Dashboard2Page'
-import { Dashboard3Page } from './features/dashboard-variantes/Dashboard3Page'
-import { Dashboard4Page } from './features/dashboard-variantes/Dashboard4Page'
 import { ApplicationDateProvider } from './contexts/ApplicationDateProvider'
 import { ComparisonProvider } from './contexts/ComparisonProvider'
 import { HttpClientProvider } from './contexts/httpClient/HttpClientProvider'
@@ -38,10 +35,6 @@ function App(): React.JSX.Element {
               {/* Telas de nível superior: navegadas pela sidebar, na janela principal. */}
               <Route element={<AppLayout />}>
                 <Route path="/" element={<DashboardContent />} />
-                {/* Variantes de dashboard em avaliação — ver features/dashboard-variantes. */}
-                <Route path="/dashboard-2" element={<Dashboard2Page />} />
-                <Route path="/dashboard-3" element={<Dashboard3Page />} />
-                <Route path="/dashboard-4" element={<Dashboard4Page />} />
                 <Route path="/garcons" element={<GarconsPage />} />
                 <Route path="/saude-cardapio" element={<SaudeCardapioPage />} />
                 <Route path="/relatorio-compras" element={<RelatorioComprasPage />} />
