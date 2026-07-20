@@ -90,76 +90,100 @@ export function FaturamentoChart(): React.JSX.Element {
     >
       {(data) => {
         const forecast = showForecast ? forecastQuery.data : undefined
+        const hojeTime = parseISODate(todayISO).getTime()
 
-        // Constrói as séries de previsão. Preserva o mapa data→nome do feriado
-        // para o tooltip; vazio quando não há previsão a exibir.
+        // O backend pré-preenche com zero TODOS os dias do intervalo, inclusive
+        // os que ainda não aconteceram. Sem este corte a linha real despenca a
+        // zero no dia seguinte a hoje e segue no chão até o fim do mês/ano —
+        // num ano selecionado são 249 dias de linha zerada achatando a escala.
+        const historico = data.filter((p) => p.x.getTime() <= hojeTime)
+        const pontosPrevisao = forecast?.pontos ?? []
+
+        // Eixo de datas comum aos dois datasets. `interaction.mode = 'index'`
+        // (ChartJSConfig) agrupa o tooltip por POSIÇÃO no array, não por data:
+        // com séries de tamanhos diferentes o título vinha de um dia e o corpo
+        // de outro (ex.: título "7 de abril" com a previsão de 1º de maio).
+        // Alinhadas na mesma grade, cada índice corresponde a um único dia.
+        const eixo = [
+          ...new Set([
+            ...historico.map((p) => p.x.getTime()),
+            ...pontosPrevisao.map((p) => parseISODate(p.data).getTime())
+          ])
+        ].sort((a, b) => a - b)
+
+        const realPorTempo = new Map(historico.map((p) => [p.x.getTime(), p.y]))
+        const previsaoPorTempo = new Map(
+          pontosPrevisao.map((p) => [parseISODate(p.data).getTime(), p])
+        )
+
+        // Mapa data→nome do feriado para o tooltip; vazio sem previsão a exibir.
         const feriadoNomePorTempo = new Map<number, string>()
+        forecast?.feriadosNoHorizonte.forEach((f) =>
+          feriadoNomePorTempo.set(parseISODate(f.data).getTime(), f.nome)
+        )
+
+        const serieReal = eixo.map((t) => ({ x: new Date(t), y: realPorTempo.get(t) ?? null }))
+
+        // A previsão começa em "hoje", dia que o histórico também cobre. Nesse
+        // ponto de junção vale o valor real, com a banda de largura zero, para
+        // a linha tracejada partir de onde a linha cheia termina.
+        const ancora = historico[historico.length - 1]
+        const ancoraTime = ancora?.x.getTime()
+
+        const previsto = (
+          t: number,
+          campo: 'valor' | 'limiteInferior' | 'limiteSuperior'
+        ): number | null => {
+          const ponto = previsaoPorTempo.get(t)
+          if (!ponto) return null
+          return ancora && t === ancoraTime ? ancora.y : ponto[campo]
+        }
+
+        const serieDePrevisao = (
+          campo: 'valor' | 'limiteInferior' | 'limiteSuperior'
+        ): { x: Date; y: number | null }[] =>
+          eixo.map((t) => ({ x: new Date(t), y: previsto(t, campo) }))
+
+        const feriadoFlags = eixo.map((t) => previsaoPorTempo.get(t)?.feriado ?? false)
 
         const forecastDatasets =
-          forecast && forecast.pontos.length > 0
-            ? (() => {
-                const linha = forecast.pontos.map((p) => ({ x: parseISODate(p.data), y: p.valor }))
-                const superior = forecast.pontos.map((p) => ({
-                  x: parseISODate(p.data),
-                  y: p.limiteSuperior
-                }))
-                const inferior = forecast.pontos.map((p) => ({
-                  x: parseISODate(p.data),
-                  y: p.limiteInferior
-                }))
-                const feriadoFlags = forecast.pontos.map((p) => p.feriado)
-
-                forecast.feriadosNoHorizonte.forEach((f) =>
-                  feriadoNomePorTempo.set(parseISODate(f.data).getTime(), f.nome)
-                )
-
-                // Conecta a projeção ao último ponto real (linha tracejada parte
-                // dele; a banda de confiança começa com largura zero nesse ponto).
-                const ultimo = data[data.length - 1]
-                if (ultimo) {
-                  linha.unshift({ x: ultimo.x, y: ultimo.y })
-                  superior.unshift({ x: ultimo.x, y: ultimo.y })
-                  inferior.unshift({ x: ultimo.x, y: ultimo.y })
-                  feriadoFlags.unshift(false)
+          pontosPrevisao.length > 0
+            ? [
+                {
+                  label: BANDA_MAX,
+                  data: serieDePrevisao('limiteSuperior'),
+                  borderColor: 'transparent',
+                  backgroundColor: `${colors.primary}22`,
+                  pointRadius: 0,
+                  fill: '+1',
+                  tension: 0.3
+                },
+                {
+                  label: BANDA_MIN,
+                  data: serieDePrevisao('limiteInferior'),
+                  borderColor: 'transparent',
+                  backgroundColor: 'transparent',
+                  pointRadius: 0,
+                  fill: false,
+                  tension: 0.3
+                },
+                {
+                  label: PREVISAO,
+                  data: serieDePrevisao('valor'),
+                  borderColor: colors.primaryLight,
+                  borderDash: [6, 4],
+                  backgroundColor: 'transparent',
+                  fill: false,
+                  tension: 0.3,
+                  pointStyle: 'rectRot',
+                  pointBackgroundColor: chartColors.warning,
+                  pointBorderColor: colors.primaryLight,
+                  pointRadius: (ctx: { dataIndex: number }) =>
+                    feriadoFlags[ctx.dataIndex] ? 5 : 0,
+                  pointHoverRadius: (ctx: { dataIndex: number }) =>
+                    feriadoFlags[ctx.dataIndex] ? 7 : 3
                 }
-
-                return [
-                  {
-                    label: BANDA_MAX,
-                    data: superior,
-                    borderColor: 'transparent',
-                    backgroundColor: `${colors.primary}22`,
-                    pointRadius: 0,
-                    fill: '+1',
-                    tension: 0.3
-                  },
-                  {
-                    label: BANDA_MIN,
-                    data: inferior,
-                    borderColor: 'transparent',
-                    backgroundColor: 'transparent',
-                    pointRadius: 0,
-                    fill: false,
-                    tension: 0.3
-                  },
-                  {
-                    label: PREVISAO,
-                    data: linha,
-                    borderColor: colors.primaryLight,
-                    borderDash: [6, 4],
-                    backgroundColor: 'transparent',
-                    fill: false,
-                    tension: 0.3,
-                    pointStyle: 'rectRot',
-                    pointBackgroundColor: chartColors.warning,
-                    pointBorderColor: colors.primaryLight,
-                    pointRadius: (ctx: { dataIndex: number }) =>
-                      feriadoFlags[ctx.dataIndex] ? 5 : 0,
-                    pointHoverRadius: (ctx: { dataIndex: number }) =>
-                      feriadoFlags[ctx.dataIndex] ? 7 : 3
-                  }
-                ]
-              })()
+              ]
             : []
 
         const chartData = {
@@ -167,7 +191,7 @@ export function FaturamentoChart(): React.JSX.Element {
           datasets: [
             {
               label: 'Faturamento em R$',
-              data,
+              data: serieReal,
               // Com um único dia a linha fica vazia (só 1 ponto); tornamos o ponto
               // visível e dourado para que o faturamento apareça no tooltip ao passar o mouse.
               ...(isSingleDay
@@ -192,9 +216,13 @@ export function FaturamentoChart(): React.JSX.Element {
                 plugins: {
                   legend: { display: false },
                   tooltip: {
-                    // Esconde as linhas das bandas de confiança do tooltip (ruído).
+                    // Esconde as bandas de confiança (ruído) e as séries que não
+                    // existem naquele dia — na grade comum elas entram como null.
                     filter: (item) =>
-                      item.dataset.label !== BANDA_MAX && item.dataset.label !== BANDA_MIN,
+                      item.dataset.label !== BANDA_MAX &&
+                      item.dataset.label !== BANDA_MIN &&
+                      item.parsed.y !== null &&
+                      item.parsed.y !== undefined,
                     callbacks: {
                       label: (context) => {
                         const valor = tooltipFormatter.format(context.parsed.y ?? 0)
