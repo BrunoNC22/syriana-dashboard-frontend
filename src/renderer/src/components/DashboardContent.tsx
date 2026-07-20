@@ -1,5 +1,4 @@
 import { JSX } from 'react'
-import { Link } from 'react-router-dom'
 import { DashboardChart } from '../charts/DashboardChart'
 import { FaturamentoChart } from '../charts/FaturamentoChart'
 import { ProdutosMaisVendidosChart } from '../charts/ProdutosMaisVendidosChart'
@@ -13,67 +12,13 @@ import { FaturamentoPrevistoKPI } from '@renderer/kpis/FaturamentoPrevistoKPI'
 import { FaturamentoMedioPorHoraPorDiaSemanaWidget } from '@renderer/widgets/FaturamentoMedioPorHoraPorDiaSemanaWidget'
 import { InsumosQueMaisCustaramChart } from '@renderer/charts/InsumosQueMaisCustaramChart'
 import { ProductSearch } from '@renderer/features/busca/ProductSearch'
-import { hoje, isDataSimulada } from '@renderer/appClock'
-
-/**
- * Aviso de que a aplicação está com data simulada (só em desenvolvimento).
- * Sem ele, um dashboard "parado" num mês antigo vira bug fantasma.
- */
-const DataSimuladaChip = (): JSX.Element | null => {
-  if (!isDataSimulada()) return null
-
-  return (
-    <span
-      className="px-3 py-1.5 border border-amber-400/30 bg-amber-400/10 text-amber-400 text-sm font-bold rounded-lg flex items-center gap-1.5"
-      title="Definido por 'dataAtualSimulada' no server-config.json. Não vale no app empacotado."
-    >
-      <span className="material-symbols-outlined text-base">schedule</span>
-      Data simulada: {hoje().toLocaleDateString('pt-BR')}
-    </span>
-  )
-}
 
 export const DashboardContent = (): JSX.Element => {
   return (
     <section className="p-container-padding max-w-7xl mx-auto space-y-gutter">
       <div className="flex justify-between items-center gap-4 flex-wrap">
-        <div className="flex items-center gap-4">
-          <h1 className="font-h1 text-primary text-h2 sm:text-h1">Syriana Dashboard</h1>
-          <Link
-            to="/garcons"
-            className="px-3 py-1.5 border border-primary/20 bg-primary/5 text-primary text-sm font-bold rounded-lg hover:bg-primary/10 transition-colors flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined text-base">groups</span>
-            Garçons
-          </Link>
-          <Link
-            to="/saude-cardapio"
-            className="px-3 py-1.5 border border-primary/20 bg-primary/5 text-primary text-sm font-bold rounded-lg hover:bg-primary/10 transition-colors flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined text-base">health_and_safety</span>
-            Saúde do cardápio
-          </Link>
-          <button
-            type="button"
-            onClick={() =>
-              window.electron.openWindow('/relatorio-compras', {
-                width: 1100,
-                height: 820,
-                resizable: true,
-                maximizable: true,
-                minimizable: true,
-                title: 'Relatório de compras',
-                center: true
-              })
-            }
-            className="px-3 py-1.5 border border-primary/20 bg-primary/5 text-primary text-sm font-bold rounded-lg hover:bg-primary/10 transition-colors flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined text-base">shopping_cart</span>
-            Relatório de compras
-          </button>
-        </div>
+        <h1 className="font-h1 text-primary text-h2 sm:text-h1">Syriana Dashboard</h1>
         <div className="flex items-center gap-3">
-          <DataSimuladaChip />
           <ProductSearch />
           <DateRangePicker />
         </div>

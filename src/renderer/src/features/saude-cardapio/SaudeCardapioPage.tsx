@@ -1,5 +1,4 @@
 import { JSX, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { format, parseISO } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -108,16 +107,7 @@ export const SaudeCardapioPage = (): JSX.Element => {
   return (
     <section className="p-container-padding max-w-7xl mx-auto space-y-gutter">
       <div className="flex justify-between items-center gap-4 flex-wrap">
-        <div>
-          <Link
-            to="/"
-            className="text-xs text-on-surface-variant opacity-70 hover:opacity-100 hover:text-primary transition-colors flex items-center gap-1"
-          >
-            <span className="material-symbols-outlined text-sm">arrow_back</span>
-            Dashboard
-          </Link>
-          <h1 className="font-h1 text-primary text-h2 sm:text-h1 mt-1">Saúde do cardápio</h1>
-        </div>
+        <h1 className="font-h1 text-primary text-h2 sm:text-h1">Saúde do cardápio</h1>
         <DateRangePicker />
       </div>
 
