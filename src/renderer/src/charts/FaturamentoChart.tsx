@@ -124,6 +124,21 @@ export function FaturamentoChart(): React.JSX.Element {
 
         const serieReal = eixo.map((t) => ({ x: new Date(t), y: realPorTempo.get(t) ?? null }))
 
+        // O eixo cobre o período selecionado inteiro, não só os dias com dados:
+        // escolhendo o ano corrente, a escala vai até 31/12 mesmo com a linha
+        // parando em hoje. O teto se estende quando a previsão passa do fim do
+        // período (mês selecionado + horizonte de 30 dias), senão ela sairia
+        // cortada.
+        const inicioDoEixo = parseISODate(startISO).getTime()
+        const fimDoEixo = Math.max(parseISODate(endISO).getTime(), eixo[eixo.length - 1] ?? 0)
+
+        // Um dia só no passado (sem previsão) daria min === max, escala sem
+        // extensão: folga de meio dia para os dois lados centra o ponto.
+        const MEIA_JANELA_MS = 12 * 60 * 60 * 1000
+        const semExtensao = inicioDoEixo === fimDoEixo
+        const xMin = semExtensao ? inicioDoEixo - MEIA_JANELA_MS : inicioDoEixo
+        const xMax = semExtensao ? fimDoEixo + MEIA_JANELA_MS : fimDoEixo
+
         // A previsão começa em "hoje", dia que o histórico também cobre. Nesse
         // ponto de junção vale o valor real, com a banda de largura zero, para
         // a linha tracejada partir de onde a linha cheia termina.
@@ -238,7 +253,9 @@ export function FaturamentoChart(): React.JSX.Element {
                 scales: {
                   x: {
                     type: 'time',
-                    time: { tooltipFormat: "eeee, d 'de' MMMM", unit: 'day' },
+                    min: xMin,
+                    max: xMax,
+                    time: { tooltipFormat: "eeee, d 'de' MMMM" },
                     adapters: { date: { locale: ptBR } },
                     ticks: { source: 'auto', autoSkip: true, maxTicksLimit: 8 }
                   },
