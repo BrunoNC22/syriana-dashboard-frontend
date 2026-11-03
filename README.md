@@ -20,6 +20,14 @@ $ npm install
 $ npm run dev
 ```
 
+### Demonstração (dados fictícios)
+
+```bash
+$ npm run demo
+```
+
+Abre o aplicativo sem banco de dados, com uma API de demonstração (`scripts/demo/demo-api.mjs`) que responde nos mesmos endpoints e no mesmo formato da API real, com cardápio, equipe e movimento inventados. Serve para apresentações e capturas de tela sem expor dados do restaurante. A senha do login é `demo`.
+
 ### Build
 
 ```bash
